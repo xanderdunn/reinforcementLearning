@@ -30,29 +30,11 @@ object TicTacToeLearning {
     frame.setContentPane(ticTacToeWorld.ticTacToePanel)
     frame.setVisible(true)
 
-    val agents = Array(ticTacToeWorld.agent1, ticTacToeWorld.agent2)
-
     while (true) {
-      val randomAction = ticTacToeWorld.agent2.act(ticTacToeWorld.environment)  // O makes a random play
-      val episodeEnded = ticTacToeWorld.environment.takeSpace(ticTacToeWorld.agent2, randomAction)
-      frame.repaint()
-      Thread.sleep(1)
-      if (episodeEnded == 1) {
-        println("Episode ended on O")
-        ticTacToeWorld.environment.giveReward(ticTacToeWorld.agent1, ticTacToeWorld.agent2, ticTacToeWorld.agent1.newlyOccupiedSpace, agents)
-        ticTacToeWorld.endEpisode()
-      }
-      else {
-        ticTacToeWorld.agent1.previousState = ticTacToeWorld.environment.spaceOwners.toList
-        val learnedAction = ticTacToeWorld.agent1.act(ticTacToeWorld.environment)
-        val episodeEnded = ticTacToeWorld.environment.takeSpace(ticTacToeWorld.agent1, ticTacToeWorld.agent1.newlyOccupiedSpace)
-        ticTacToeWorld.environment.giveReward(ticTacToeWorld.agent1, ticTacToeWorld.agent2, ticTacToeWorld.agent1.newlyOccupiedSpace, agents)
-        if (episodeEnded == 1) {
-          frame.repaint()
-          Thread.sleep(1)
-          ticTacToeWorld.endEpisode()
-        }
-      }
+      val agent = ticTacToeWorld.agent
+      val environment = ticTacToeWorld.environment
+      val action = agent.chooseAction(environment)
+      environment.applyAction(agent)
       frame.repaint()
       Thread.sleep(1)
     }
@@ -62,33 +44,31 @@ object TicTacToeLearning {
 
 /** A TicTacToeWorld contains an Agent and an Environment as well as the TicTacToePanel responsible for drawing the two on screen. */
 class TicTacToeWorld {
-  val agent1 = new Agent("X")
-  val agent2 = new Agent("O")
+  val agent = new Agent("X")
   val environment = new Environment()
   val ticTacToePanel = new TicTacToePanel(this)
-
-  def endEpisode() {
-    environment.spaceOwners = MutableList.fill(environment.size*environment.size){""}
-    agent1.previousState = List()
-    agent2.previousState = List()
-  }
-
 }
 
 
 /** The agent object who makes decisions on where to places X's or O'.  Because there are two players, players are identified by an integer value.*/
 class Agent(_name : String) {
   val name = _name
+  private var _state : List[String] = List.fill(9){""}
+  var previousState = List.fill(9){""}
+  def state = _state
+  def state_=(newState : List[String]): Unit = {
+    previousState = _state
+    _state = newState
+  }
   var newlyOccupiedSpace = 0
-  var previousState : List[String] = List()
   val stateValues = Map[List[String], Map[Int, Int]]()  // The state-value function is stored in a map with keys that are environment states of the Tic-tac-toe board and values that are arrays of the value of each possible action in this state.  A possible action is any space that is not currently occupied.  
 
   /** Convenience method for initializing values for a given state if not already initialized */
-  def getStateValues(state : List[String], size : Int) : Map[Int, Int] = { 
-    if (!stateValues.contains(state)) { // Initialize the state values to 0
-      if (EnvironmentUtilities.isFullBoard(state)) {  // The state values in the stop state are always 0, so always return a map full of zeros
+  def getStateValues(state : List[String]) : Map[Int, Int] = { 
+    if (stateValues.contains(state) == false) { // Initialize the state values to 0
+      if (EnvironmentUtilities.isFullBoard(state) == true) {  // The state values in the stop state are always 0, so always return a map full of zeros
         val zeroMap = Map[Int, Int]()
-        for (i <- 1 until size + 1) {
+        for (i <- 1 until 4) {
           zeroMap(i) = 0
         }
         stateValues(state) = zeroMap
@@ -107,19 +87,11 @@ class Agent(_name : String) {
   }
 
   /** Decide what to do given the current environment and return that action. */
-  def act(environment : Environment) : Int = {
-    if (name == "O") {
-      val rand = scala.util.Random
-      val emptySpaces = EnvironmentUtilities.emptySpaces(environment.spaceOwners.toList)
-      return emptySpaces(rand.nextInt(emptySpaces.size))
-    }
-    if (previousState.size == 0) {
-      previousState = environment.spaceOwners.toList
-    }
+  def chooseAction(environment : Environment) : Int = {
     val rand = scala.util.Random
     val randomHundred = rand.nextInt(100)
     if (randomHundred <= 89) { // Exploit: Choose the greedy action and break ties randomly
-      val stateValues = getStateValues(environment.spaceOwners.toList, environment.size)
+      val stateValues = getStateValues(environment.spaceOwners.toList)
       val maxValue = stateValues.max._2
       val maxValueSpaces = ArrayBuffer[Int]()
       for ((key, value) <- stateValues) {
@@ -137,21 +109,12 @@ class Agent(_name : String) {
   }
 
   /** The environment calls this to reward the agent for its action. */
-  def reward(value : Int, state : List[String], size : Int) {
-    if (name == "X") {
+  def reward(value : Int) {
       // Make sure they're initialized
-      getStateValues(previousState, size)
-      getStateValues(state, size)
-      //println(s"previousState = ${previousState}")
-      //println(s"previousState values = ${getStateValues(previousState, size).mkString(", ")}")
-      //println(s"newlyOccupiedSpace = ${newlyOccupiedSpace}")
-      //println(s"state = ${state}")
-      //println(s"state values = ${getStateValues(state, size).mkString(", ")}")
-      //println(s"Got reward ${value}")
+      getStateValues(previousState)
+      getStateValues(state)
       val updateValue = (value + stateValues(state).max._2) - stateValues(previousState)(newlyOccupiedSpace) // Q-Learning
       stateValues(previousState)(newlyOccupiedSpace) += updateValue
-      //println(stateValues)
-    }
   }
 }
 
@@ -209,6 +172,9 @@ class Environment() {
   // TODO: The board could be represented in a clever way such that looking up the row and column numbers each time is not necessary.
   /** Take a list of all spots owned by a single agent.  This agent is in a winning state if it owns an entire row, an entire column, or an entire diagonal.*/
   def isWinningBoard(spaces : List[Int]) : Boolean = {
+    if (spaces.size == 0) {
+      return false
+    }
     val ownedRows = spaces.map(x => rowNumber(x))
     val ownedColumns = spaces.map(x => columnNumber(x))
     val mostCommonRow = ownedRows.groupBy(identity).mapValues(_.size).maxBy(_._2)
@@ -219,8 +185,7 @@ class Environment() {
     if (mostCommonColumn._2 == size) { // Three spots in the same column, so win
       return true
     }
-    // TODO: Generalize the diagonals to n sized boards
-    if ((spaces.contains(1) && spaces.contains(5) && spaces.contains(9)) || (spaces.contains(7) && spaces.contains(5) && spaces.contains(3))) {
+    if ((spaces.contains(1) == true && spaces.contains(5) == true && spaces.contains(9)) == true || (spaces.contains(7) == true && spaces.contains(5) == true && spaces.contains(3) == true)) {
       return true
     }
     else {
@@ -228,11 +193,35 @@ class Environment() {
     }
   }
 
-  def agentWon(candidateAgent : Agent, agents : Array[Agent]) : Boolean = {
-    for (agent <- agents) {
-      if (isWinningBoard(EnvironmentUtilities.spacesOccupiedByAgent(agent, spaceOwners.toList)) == true && candidateAgent == agent) {
-        return true
-      }
+  def xWon() : Boolean = {
+    val xSpaces = spaceOwners.zipWithIndex.collect {
+      case (element, index) if element == "X" => index + 1
+    }
+    if (isWinningBoard(xSpaces.toList) == true) {
+      return true
+    }
+    return false
+  }
+
+  def oWon() : Boolean = {
+    val oSpaces = spaceOwners.zipWithIndex.collect {
+      case (element, index) if element == "O" => index + 1
+    }
+    if (isWinningBoard(oSpaces.toList) == true) {
+      return true
+    }
+    return false
+  }
+
+  def isEndState() : Boolean = {
+    if (xWon() == true) {
+      return true
+    }
+    if (oWon() == true) {
+      return true
+    }
+    if (EnvironmentUtilities.isFullBoard(spaceOwners.toList) == true) {
+      return true
     }
     return false
   }
@@ -242,46 +231,54 @@ class Environment() {
   var stalemates = 0.0
   var totalGames = 0.0
 
-  def takeSpace(agent : Agent, action : Int) : Int = {
-    spaceOwners(action - 1) = agent.name
-    var episodeEnded = 0
-    if (isWinningBoard(EnvironmentUtilities.spacesOccupiedByAgent(agent, spaceOwners.toList))) {
-      episodeEnded = 1
+  def endEpisode(agent : Agent) {
+    spaceOwners = MutableList.fill(size*size){""}
+    agent.previousState = List.fill(size*size){""}
+    agent.state = List.fill(size*size){""}
+  }
+
+  def applyAction(agent : Agent) {
+    spaceOwners(agent.newlyOccupiedSpace - 1) = "X" // Take the space chosen by X
+    if (isEndState() == true) { // X's move just pushed it into either a winning state or a stalemate
+      giveReward(agent)  // newState = old + X's action
     }
-    else if (EnvironmentUtilities.isFullBoard(spaceOwners.toList)) {
-      episodeEnded = 1
+    else { // If the game is not over, fill a space randomly with O and give reward. 
+      val emptySpaces = EnvironmentUtilities.emptySpaces(spaceOwners.toList)
+      val rand = scala.util.Random
+      val randomSpace = emptySpaces(rand.nextInt(emptySpaces.size))
+      spaceOwners(randomSpace - 1) = "O"
+      giveReward(agent)  // newState = old + X's action + O action
     }
-    return episodeEnded
   }
 
   /** Update the agent's state and give it a reward for its ation. Return 1 if this is the end of the episode, 0 otherwise. */
-  def giveReward(agent : Agent, otherAgent : Agent, action : Int, agents : Array[Agent]) {
-    println(s"giveReward called with state ${spaceOwners}")
-    val oWon = isWinningBoard(EnvironmentUtilities.spacesOccupiedByAgent(otherAgent, spaceOwners.toList))
-    if (agentWon(agent, agents) == true) {
-      agent.reward(0, spaceOwners.toList, size)
-      totalGames += 1.0
+  def giveReward(agent : Agent) {
+    agent.state = spaceOwners.toList
+    if (xWon() == true) {
+      agent.reward(0)
       xWins += 1.0
-      println(s"${agent.name} WON!")
+      println("X WON!")
     }
-    else if (oWon == true) {
-      agent.reward(-1, spaceOwners.toList, size)
+    else if (oWon() == true) {
+      agent.reward(-1)
       oWins += 1.0
-      totalGames += 1.0
-      println(s"${otherAgent.name} WON!")
+      println("O WON!")
     }
     else if (EnvironmentUtilities.isFullBoard(spaceOwners.toList) == true) {
-      agent.reward(-1, spaceOwners.toList, size)
-      println("Stalemate")
+      agent.reward(-1)
       stalemates += 1.0
-      totalGames += 1.0
+      println("Stalemate")
     }
     else {
-      agent.reward(-1, spaceOwners.toList, size)
+      agent.reward(-1)
     }
-    println(s"X has won ${(xWins/totalGames)*100}% of games")
-    println(s"O has won ${(oWins/totalGames)*100}% of games")
-    println(s"Stalemate has happened ${(stalemates/totalGames)*100}% of games")
+    if (isEndState() == true) {
+      totalGames += 1.0
+      endEpisode(agent)
+      println(s"X has won ${(xWins/totalGames)*100}% of games")
+      println(s"O has won ${(oWins/totalGames)*100}% of games")
+      println(s"Stalemate has happened ${(stalemates/totalGames)*100}% of games")
+    }
   }
 }
 
@@ -292,8 +289,7 @@ class TicTacToePanel(gridWorld : TicTacToeWorld) extends JPanel {
 
   def drawTicTacToeWorld(graphics : Graphics) {
     drawEnvironment(gridWorld.environment, graphics)
-    drawAgent(gridWorld.agent1, gridWorld.environment, graphics)
-    drawAgent(gridWorld.agent2, gridWorld.environment, graphics)
+    drawSpaceOwnership(gridWorld.environment, graphics)
   }
 
   /** Logic for drawing the grid on the screen. */
@@ -309,21 +305,24 @@ class TicTacToePanel(gridWorld : TicTacToeWorld) extends JPanel {
   }
 
   /** Logic for drawing the agent's state on the screen. */
-  def drawAgent(agent : Agent, environment : Environment, graphics : Graphics) {
+  def drawSpaceOwnership(environment : Environment, graphics : Graphics) {
     val n = environment.size
-    val occupiedSpaces = EnvironmentUtilities.spacesOccupiedByAgent(agent, environment.spaceOwners.toList)
     val circleDiameter = 20
     val rectangleOffset = (worldOffset/2 - circleDiameter/2)/2 // Put it in the center of the grid's box
-    for (occupiedSpace <- occupiedSpaces) {
-      val py = environment.rowNumber(occupiedSpace)
-      val px = environment.columnNumber(occupiedSpace)
-      // TODO: Center these perfectly
-      val x = worldOffset + px*environment.gridWidth + environment.gridWidth/4
-      val y = worldOffset + py*environment.gridWidth + 23
-      val font = new Font("Dialog", Font.PLAIN, 22)
-      graphics.setFont(font)
-      graphics.asInstanceOf[Graphics2D].setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON)  // Enable anti-aliasing
-      graphics.drawString(agent.name, x, y)
+    var i = 1
+    for (owner <- environment.spaceOwners) {
+      if (owner != "") {
+        val py = environment.rowNumber(i)
+        val px = environment.columnNumber(i)
+        // TODO: Center these perfectly
+        val x = worldOffset + px*environment.gridWidth + environment.gridWidth/4
+        val y = worldOffset + py*environment.gridWidth + 23
+        val font = new Font("Dialog", Font.PLAIN, 22)
+        graphics.setFont(font)
+        graphics.asInstanceOf[Graphics2D].setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON)  // Enable anti-aliasing
+        graphics.drawString(owner, x, y)
+      }
+      i += 1
     }
   }
 
@@ -331,7 +330,6 @@ class TicTacToePanel(gridWorld : TicTacToeWorld) extends JPanel {
   override def paintComponent(graphics : Graphics) {
     drawTicTacToeWorld(graphics)
   }
-
 }
 
 TicTacToeLearning.main(args)
