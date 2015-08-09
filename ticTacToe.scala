@@ -5,9 +5,8 @@
 // TODO: Implement both Q-Learning and SARSA
 // TODO: Visualze the domain
 // TODO: Implement SARSA lambda (reach goal)
-// TODO: Initially play the agent against a player who always chooses an action randomly.  Then play against a second agent (agent vs. agent), which should learn to always tie.
+// TODO: Implement (agent vs. agent) play, which should learn to always tie.
 
-// TODO: Implement a tabular value function and Q-Learning on one of the agents to learn how to play well
 // TODO: Implement a multi-layer perceptron to approximate the value function
 
 //import java.awt._
@@ -61,21 +60,21 @@ class Agent(_name : String) {
     _state = newState
   }
   var newlyOccupiedSpace = 0
-  val stateValues = Map[List[String], Map[Int, Int]]()  // The state-value function is stored in a map with keys that are environment states of the Tic-tac-toe board and values that are arrays of the value of each possible action in this state.  A possible action is any space that is not currently occupied.  
+  val stateValues = Map[List[String], Map[Int, Double]]()  // The state-value function is stored in a map with keys that are environment states of the Tic-tac-toe board and values that are arrays of the value of each possible action in this state.  A possible action is any space that is not currently occupied.  
 
   /** Convenience method for initializing values for a given state if not already initialized */
-  def getStateValues(state : List[String]) : Map[Int, Int] = { 
+  def getStateValues(state : List[String]) : Map[Int, Double] = { 
     if (stateValues.contains(state) == false) { // Initialize the state values to 0
       if (EnvironmentUtilities.isFullBoard(state) == true) {  // The state values in the stop state are always 0, so always return a map full of zeros
-        val zeroMap = Map[Int, Int]()
+        val zeroMap = Map[Int, Double]()
         for (i <- 1 until 4) {
-          zeroMap(i) = 0
+          zeroMap(i) = 0.0
         }
         stateValues(state) = zeroMap
       }
       else {
         val emptySpaces = EnvironmentUtilities.emptySpaces(state)
-        val newStateValues = Map[Int, Int]()
+        val newStateValues = Map[Int, Double]()
         for (emptySpace <- emptySpaces) {
           newStateValues(emptySpace) = 0
         }
@@ -113,7 +112,7 @@ class Agent(_name : String) {
       // Make sure they're initialized
       getStateValues(previousState)
       getStateValues(state)
-      val updateValue = (value + stateValues(state).max._2) - stateValues(previousState)(newlyOccupiedSpace) // Q-Learning
+      val updateValue = (0.1)*((value + stateValues(state).max._2) - stateValues(previousState)(newlyOccupiedSpace)) // Q-Learning
       stateValues(previousState)(newlyOccupiedSpace) += updateValue
   }
 }
@@ -275,7 +274,7 @@ class Environment() {
     if (isEndState() == true) {
       totalGames += 1.0
       endEpisode(agent)
-      println(s"X has won ${(xWins/totalGames)*100}% of games")
+      println(s"X has won ${(xWins/totalGames)*100}% of ${totalGames} games")
       println(s"O has won ${(oWins/totalGames)*100}% of games")
       println(s"Stalemate has happened ${(stalemates/totalGames)*100}% of games")
     }
