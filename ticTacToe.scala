@@ -67,7 +67,7 @@ class Agent(_name : String) {
     if (stateValues.contains(state) == false) { // Initialize the state values to 0
       if (EnvironmentUtilities.isFullBoard(state) == true) {  // The state values in the stop state are always 0, so always return a map full of zeros
         val zeroMap = Map[Int, Double]()
-        for (i <- 1 until 4) {
+        for (i <- 1 until 10) {
           zeroMap(i) = 0.0
         }
         stateValues(state) = zeroMap
@@ -76,7 +76,9 @@ class Agent(_name : String) {
         val emptySpaces = EnvironmentUtilities.emptySpaces(state)
         val newStateValues = Map[Int, Double]()
         for (emptySpace <- emptySpaces) {
-          newStateValues(emptySpace) = 0
+          // If taking this space would result in a win, then set to 1.0
+          // If taking this space would result in a loss or stalemate, then set to 
+          newStateValues(emptySpace) = 0.0
         }
         stateValues(state) = newStateValues
         println(s"There are ${stateValues.size} stateValues")
@@ -91,7 +93,7 @@ class Agent(_name : String) {
     val randomHundred = rand.nextInt(100)
     if (randomHundred <= 89) { // Exploit: Choose the greedy action and break ties randomly
       val stateValues = getStateValues(environment.spaceOwners.toList)
-      val maxValue = stateValues.max._2
+      val maxValue = stateValues.maxBy(_._2)._2
       val maxValueSpaces = ArrayBuffer[Int]()
       for ((key, value) <- stateValues) {
         if (value == maxValue) {
@@ -108,11 +110,11 @@ class Agent(_name : String) {
   }
 
   /** The environment calls this to reward the agent for its action. */
-  def reward(value : Int) {
+  def reward(value : Double) {
       // Make sure they're initialized
       getStateValues(previousState)
       getStateValues(state)
-      val updateValue = (0.1)*((value + stateValues(state).max._2) - stateValues(previousState)(newlyOccupiedSpace)) // Q-Learning
+      val updateValue = (0.99)*((value + stateValues(state).max._2) - stateValues(previousState)(newlyOccupiedSpace)) // Q-Learning
       stateValues(previousState)(newlyOccupiedSpace) += updateValue
   }
 }
@@ -254,22 +256,22 @@ class Environment() {
   def giveReward(agent : Agent) {
     agent.state = spaceOwners.toList
     if (xWon() == true) {
-      agent.reward(0)
+      agent.reward(1)
       xWins += 1.0
       println("X WON!")
     }
     else if (oWon() == true) {
-      agent.reward(-1)
+      agent.reward(0)
       oWins += 1.0
       println("O WON!")
     }
     else if (EnvironmentUtilities.isFullBoard(spaceOwners.toList) == true) {
-      agent.reward(-1)
+      agent.reward(0.5)
       stalemates += 1.0
       println("Stalemate")
     }
     else {
-      agent.reward(-1)
+      agent.reward(0)
     }
     if (isEndState() == true) {
       totalGames += 1.0
