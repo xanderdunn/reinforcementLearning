@@ -32,6 +32,7 @@ package neuralNet {
       new Connection(hiddenNeuron, _outputNeuron) // Connect the hidden neuron to the output neuron
     }
 
+    /** Take a supervised output value and backpropogate the error through the neural net. */
     def train(input : Array[Double], actual : Double) : Double = {
       val result = feedForward(input)
       val error = actual - result
@@ -40,6 +41,7 @@ package neuralNet {
       return result
     }
 
+    /** Initiate backpropogation. */
     def backpropogate(deltaOutput : Double) {
       updateOutputWeight(deltaOutput)
       updateHiddenWeights(deltaOutput)
@@ -77,6 +79,7 @@ package neuralNet {
       }
     }
 
+    /** Return the neural net's output value for a given input. */
     def feedForward(inputs : Array[Double]) : Double = {
       var i = 0
       for (input <- inputs) {
