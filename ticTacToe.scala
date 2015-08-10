@@ -114,7 +114,7 @@ class Agent(_name : String) {
       // Make sure they're initialized
       getStateValues(previousState)
       getStateValues(state)
-      val updateValue = (0.99)*((value + stateValues(state).max._2) - stateValues(previousState)(newlyOccupiedSpace)) // Q-Learning
+      val updateValue = (0.05)*((value + stateValues(state).maxBy(_._2)._2) - stateValues(previousState)(newlyOccupiedSpace)) // Q-Learning
       stateValues(previousState)(newlyOccupiedSpace) += updateValue
   }
 }
@@ -256,12 +256,12 @@ class Environment() {
   def giveReward(agent : Agent) {
     agent.state = spaceOwners.toList
     if (xWon() == true) {
-      agent.reward(1)
+      agent.reward(1.0)
       xWins += 1.0
       println("X WON!")
     }
     else if (oWon() == true) {
-      agent.reward(0)
+      agent.reward(0.0)
       oWins += 1.0
       println("O WON!")
     }
@@ -271,7 +271,7 @@ class Environment() {
       println("Stalemate")
     }
     else {
-      agent.reward(0)
+      agent.reward(0.0)
     }
     if (isEndState() == true) {
       totalGames += 1.0
