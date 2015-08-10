@@ -3,19 +3,19 @@
 // Convention: The Tic-tac-toe board with size n will have its spaces numbered 1 through n*n starting in the top left corner moving right along the row and continuing in the leftmost space on the row below.  Typically, n == 3.
 
 // TODO: Implement SARSA
-// TODO: Implement SARSA lambda (reach goal)
-// TODO: Implement (agent vs. agent) play, which should learn to always tie.
+// TODO: Implement SARSA lambda
+// TODO: Implement agent vs. agent play, which should learn to always tie.
 
-// TODO: Implement a multi-layer perceptron to approximate the value function
-
+import nn._
 import java.awt.Graphics
 import java.awt.Font
 import java.awt.Graphics2D
 import java.awt.RenderingHints
 import javax.swing._
 import scala.math
-import scala.util.Random
+import scala.util.Random._
 import scala.collection.mutable._
+
 
 object TicTacToeLearning {
   /** Executed to initiate playing Tic-tac-toe with Q-Learning. */
@@ -24,50 +24,89 @@ object TicTacToeLearning {
     frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE)
     frame.setSize(180, 180)
 
-    val ticTacToeWorld = new TicTacToeWorld()
-    frame.setContentPane(ticTacToeWorld.ticTacToePanel)
-    frame.setVisible(true)
-    val agent = ticTacToeWorld.agent
-    val environment = ticTacToeWorld.environment
+    //val ticTacToeWorldTabular = new TicTacToeWorld(true)
+    val ticTacToeWorldNeuralNet = new TicTacToeWorld(false)
+    val worlds = Array(/*ticTacToeWorldTabular,*/ ticTacToeWorldNeuralNet)
+    for (ticTacToeWorld <- worlds) {
+      var trainSteps = 100000
+      var testSteps = 100000
+      if (ticTacToeWorld.tabular == true) {
+        println("=== Tabular Q Learning:")
+      }
+      else {
+        trainSteps = 200000
+        testSteps = 100000
+        println("=== Neural Network Q Learning:")
+      }
+      frame.setContentPane(ticTacToeWorld.ticTacToePanel)
+      frame.setVisible(true)
+      val agent = ticTacToeWorld.agent
+      val environment = ticTacToeWorld.environment
 
-    println("Training 100000 games against a random player.")
-    while (environment.totalGames < 100000) { // Train for 100000 games
-      iterateGameStep(agent, environment, 10.0, frame)
+      println(s"Training ${trainSteps} games against a random player.")
+      while (environment.totalGames < trainSteps) { // Train for ${trainSteps} games
+        iterateGameStep(ticTacToeWorld, 10.0, frame)
+      }
+      environment.resetGameStats()
+      println(s"Testing the trained Q-Learner against ${testSteps} games.  Exploration is disabled.")
+      while (environment.totalGames < testSteps) {
+        iterateGameStep(ticTacToeWorld, 0.0, frame)
+      }
+      println(s"The Q-Learner won ${environment.xWins / environment.totalGames * 100}% of ${testSteps} test games against a random player.")
+      println(s"The random player won ${environment.oWins} of the ${testSteps} test games.")
+      println(s"${environment.stalemates} of the ${testSteps} test games were stalemates.")
+      println("")
     }
-    environment.resetGameStats()
-    println("Testing the trained Q-Learner against 100000 games.")
-    while (environment.totalGames < 100000) {
-      iterateGameStep(agent, environment, 0.0, frame)
-    }
-    println(s"The Q-Learner won ${environment.xWins / environment.totalGames * 100}% of 100000 test games against a random player.")
-    println(s"The random player won ${environment.oWins} of the 100000 test games.")
-    println(s"${environment.stalemates} of the 100000 test games were stalemates.")
 
     System.exit(0)
   }
 
-  def iterateGameStep(agent : Agent, environment : Environment, epsilon : Double, frame : JFrame) {
-      val action = agent.chooseAction(environment, epsilon)
-      environment.applyAction(agent)
-      frame.repaint()
-      // TODO: Show some text on the tic tac toe board when a certain player wins
-      // TODO: Fix the timing such that 
-      //Thread.sleep(1)
+  def iterateGameStep(ticTacToeWorld : TicTacToeWorld, epsilon : Double, frame : JFrame) {
+    val agent = ticTacToeWorld.agent
+    val environment = ticTacToeWorld.environment
+    agent.chooseAction(epsilon)
+    environment.applyAction(agent)
+    frame.repaint()
+    // TODO: Show some text on the tic tac toe board when a certain player wins
+    // TODO: Fix the timing such that 
+    //Thread.sleep(1)
   }
 
 }
 
 
 /** A TicTacToeWorld contains an Agent and an Environment as well as the TicTacToePanel responsible for drawing the two on screen. */
-class TicTacToeWorld {
-  val agent = new Agent("X")
+class TicTacToeWorld(_tabular : Boolean) {
+  def tabular = _tabular
+  val agent = new Agent("X", _tabular)
   val environment = new Environment()
   val ticTacToePanel = new TicTacToePanel(this)
 }
 
+object NeuralNetUtilities {
+    /** Take a state and represent it in a way that can be fed into the neural net */
+  def neuralNetFeatureVectorForStateAction(state : List[String], action : Int) : Array[Float] = {
+    val featureVector : ArrayBuffer[Float] = ArrayBuffer()
+    for (owner <- state) {
+      if (owner == "X") {
+        featureVector += 1.0.toFloat
+      }
+      else if (owner == "O") {
+        featureVector += -1.0.toFloat
+      }
+      else {
+        featureVector += 0.0.toFloat
+      }
+    }
+    featureVector += action.toFloat
+    return featureVector.toArray
+  }
+}
+
+import NeuralNetUtilities._
 
 /** The agent object who makes decisions on where to places X's and O's.  Because there are two players, players are identified by an integer value.*/
-class Agent(_name : String) {
+class Agent(_name : String, _tabular : Boolean) {
   val name = _name
   private var _state : List[String] = List.fill(9){""}
   var previousState = List.fill(9){""}
@@ -78,6 +117,11 @@ class Agent(_name : String) {
   }
   var newlyOccupiedSpace = 0
   val stateValues = Map[List[String], Map[Int, Double]]()  // The state-value function is stored in a map with keys that are environment states of the Tic-tac-toe board and values that are arrays of the value of each possible action in this state.  A possible action is any space that is not currently occupied.  
+  def tabular = _tabular
+  var neuralNet : Option[Network] = None
+  if (tabular == false) {
+    neuralNet = Option(new Network(10, 26))
+  }
 
   /** Convenience method for initializing values for a given state if not already initialized */
   def getStateValues(state : List[String]) : Map[Int, Double] = { 
@@ -103,35 +147,74 @@ class Agent(_name : String) {
     return stateValues(state)
   }
 
-  /** Decide what to do given the current environment and return that action. */
-  def chooseAction(environment : Environment, exploreEpsilon : Double) : Int = {
-    val rand = scala.util.Random
-    val randomHundred = rand.nextInt(100)
-    if (randomHundred <= (100 - exploreEpsilon - 1)) { // Exploit: Choose the greedy action and break ties randomly
-      val stateValues = getStateValues(environment.spaceOwners.toList)
-      val maxValue = stateValues.maxBy(_._2)._2
-      val maxValueSpaces = ArrayBuffer[Int]()
-      for ((key, value) <- stateValues) {
-        if (value == maxValue) {
-          maxValueSpaces += key
-        }
+  /** */
+  def maxNeuralNetValueAndActionForState(state : List[String]) : (Double, Int) = {
+    val possibleMoves = EnvironmentUtilities.emptySpaces(state)
+    var maxValue = 0.0  // TODO: I'll need to store this somewhere to update the neural net later
+    var greedyAction  = 0
+    for (possibleMove <- possibleMoves) {
+      val input = neuralNetFeatureVectorForStateAction(state, possibleMove)
+      val value = neuralNet.get.feedForward(input.toArray)
+      if (value > maxValue) {
+        greedyAction = possibleMove
+        maxValue = value
       }
-      newlyOccupiedSpace = maxValueSpaces(rand.nextInt(maxValueSpaces.size))
+    }
+    return (maxValue, greedyAction)
+  }
+
+  def chooseAction(exploreEpsilon : Double) {
+    val randomHundred = nextInt(100)
+    if (randomHundred <= (100 - exploreEpsilon - 1)) { // Exploit: Choose the greedy action and break ties randomly
+      if (tabular == true) {
+        newlyOccupiedSpace = tabularGreedyAction()
+      }
+      else {
+        newlyOccupiedSpace = neuralNetGreedyAction()
+      }
     }
     else { // Explore: Randomly choose an action
-      val emptySpaces = EnvironmentUtilities.emptySpaces(environment.spaceOwners.toList)
-      newlyOccupiedSpace = emptySpaces(rand.nextInt(emptySpaces.size))
+      val emptySpaces = EnvironmentUtilities.emptySpaces(state)
+      newlyOccupiedSpace = emptySpaces(nextInt(emptySpaces.size))
     }
-    return newlyOccupiedSpace
+  }
+
+  /** Use a neural network to choose the greedy action to take */
+  def neuralNetGreedyAction() : Int = {
+    return maxNeuralNetValueAndActionForState(state)._2
+  }
+
+  /** Decide what to do given the current environment and return that action. */
+  def tabularGreedyAction() : Int = {
+    val stateValues = getStateValues(state)
+    val maxValue = stateValues.maxBy(_._2)._2
+    val maxValueSpaces = ArrayBuffer[Int]()
+    for ((key, value) <- stateValues) {
+      if (value == maxValue) {
+        maxValueSpaces += key
+      }
+    }
+    return maxValueSpaces(nextInt(maxValueSpaces.size))
   }
 
   /** The environment calls this to reward the agent for its action. */
-  def reward(value : Double) {
+  def reward(reward : Double) {
+    if (tabular) {
       // Make sure they're initialized
       getStateValues(previousState)
       getStateValues(state)
-      val updateValue = (0.70)*((value + stateValues(state).maxBy(_._2)._2) - stateValues(previousState)(newlyOccupiedSpace)) // Q-Learning
+      val updateValue = (0.70)*((reward + stateValues(state).maxBy(_._2)._2) - stateValues(previousState)(newlyOccupiedSpace)) // Q-Learning
       stateValues(previousState)(newlyOccupiedSpace) += updateValue
+    }
+    else {
+      val previousStateFeatureVector = neuralNetFeatureVectorForStateAction(previousState, newlyOccupiedSpace)
+      val previousStateValue = neuralNet.get.feedForward(previousStateFeatureVector)
+      val stateMaxValue = maxNeuralNetValueAndActionForState(state)._1
+      val discountRate = 0.2
+      val learningRate = 0.2 
+      val targetValue = previousStateValue + learningRate * (reward + discountRate * stateMaxValue - previousStateValue)  // q(s,a) + learningrate * (reward + discountRate * q'(s,a) - q(s,a))
+      neuralNet.get.train(previousStateFeatureVector, targetValue.toFloat)
+    }
   }
 }
 
@@ -268,8 +351,7 @@ class Environment() {
     }
     else { // If the game is not over, fill a space randomly with O and give reward. 
       val emptySpaces = EnvironmentUtilities.emptySpaces(spaceOwners.toList)
-      val rand = scala.util.Random
-      val randomSpace = emptySpaces(rand.nextInt(emptySpaces.size))
+      val randomSpace = emptySpaces(nextInt(emptySpaces.size))
       spaceOwners(randomSpace - 1) = "O"
       giveReward(agent)  // newState = old + X's action + O action
     }
@@ -351,4 +433,243 @@ class TicTacToePanel(gridWorld : TicTacToeWorld) extends JPanel {
 }
 
 TicTacToeLearning.main(args)
+
+class Neuron() {
+  private var _sum = 0.0
+  var connections : ArrayBuffer[Connection] = ArrayBuffer()
+  var input = 0.0
+  
+  // TODO: The input neuron needs to output the input value
+  def updateOutput() {
+    var sum = 0.0
+    var hasInputConnection = false
+    for (connection <- connections) {
+      if (connection.b == this) { // This is a connection that inputs into this neuron
+        hasInputConnection = true
+        val inputNeuron = connection.a
+        sum += inputNeuron.output()*connection.weight
+      }
+    }
+    if (hasInputConnection == true) {
+      println(s"Got sum ${sum}")
+      _sum = sigmoid(sum)
+      println(s"Updated hidden or output connection to ${_sum}")
+    }
+    else { // This is an input neuron
+      _sum = input
+    }
+  }
+
+  def sigmoid(input : Double) : Double = { // sigmoid activation function
+    return 1.0 / (1.0 + Math.exp(-input))
+  }
+
+  def output() : Double = {
+    return _sum
+  }
+}
+
+def testFunction(input : Double) : Double = {
+  val value = Math.sin(input)
+  return value.toDouble
+}
+
+
+class Connection(_a : Neuron, _b : Neuron) {
+  def a = _a
+  def b = _b
+  a.connections += this
+  b.connections += this
+  //var weight : Double = nextDouble() TODO Make this random again
+  var weight : Double = 0.5
+
+  def adjustWeight(deltaWeight : Double) {
+    weight += deltaWeight
+  }
+}
+
+// Working XOR
+//object TrainTestNet {
+  //def main(args: Array[String]) {
+    //var i = 0
+    //val net = new Network(2, 4)
+    //while (i < 10000) {
+      //val inp = Array(nextDouble().round.toFloat, nextDouble().round.toFloat)
+      //println(s"${inp.mkString(", ")}")
+      //var known = 1.0
+      //if ((inp(0) == 1.0 && inp(1) == 1.0) || (inp(0) == 0.0 && inp(1) == 0.0)) {
+        //known = 0.0
+      //}
+      //val result = net.train(inp, known.toFloat)
+      //println(s"result = ${result}")
+      //println(s"expected = ${known}")
+      //println(s"${i} iterations")
+      //println("")
+      //i += 1
+    //}
+  //}
+//}
+
+// Working x=y
+//object TrainTestNet {
+  //def main(args: Array[String]) {
+    //var i = 0
+    //val net = new Network(1, 1)
+    //while (i < 100000) {
+      //val input = nextDouble()
+      //val result = net.train(Array(input.toFloat), input.toFloat)
+      //println(s"result = ${result}")
+      //println(s"expected = ${input}")
+      //println(s"${i} iterations")
+      //println("")
+      //i += 1
+    //}
+  //}
+//}
+
+// Working sin(x)
+//object TrainTestNet {
+  //def main(args: Array[String]) {
+    //var i = 0
+    //val net = new Network(1, 20)
+    //while (i < 100000) {
+      //val input = nextFloat()
+      //val expected = Math.sin(input)
+      //val result = net.train(Array(input), expected.toFloat)
+      //println(s"input = ${input}")
+      //println(s"result = ${result}")
+      //println(s"expected = ${expected}")
+      //println(s"${i} iterations")
+      //println("")
+      //i += 1
+    //}
+  //}
+//}
+
+//TrainTestNet.main(args)
+
+object TrainNeuralNet {
+  def main(args: Array[String]) {
+    val neuralNet = new NeuralNet()
+    var i = 0
+    println("Training the neural net on 1000 samples")
+    while (i < 1000000000) { // Train
+      val randomX = nextDouble()
+      val prediction = neuralNet.feedforward(randomX)
+      val actual = testFunction(randomX)
+      println(s"Predicted ${prediction}, actual output is ${actual}")
+      val error = actual - prediction
+      println(s"error = ${error} = ${actual} - ${prediction}")
+      val deltaOutput = prediction * (1 - prediction) * error
+      println(s"deltaOutput = ${deltaOutput} = ${prediction} * (1 - ${prediction}) * ${error}")
+      neuralNet.backpropogate(deltaOutput)
+      i += 1
+      println("")
+    }
+    i = 0
+    //println("Testing the neural net on 1000 samples")
+    //while (i < 1000) { // Test
+      //val randomX = nextDouble()
+      //val prediction = neuralNet.feedforward(randomX)
+      //val actual = testFunction(randomX)
+      //println(s"Predicted ${prediction}, actual output is ${actual}")
+      //i += 1
+    //}
+  }
+}
+
+
+/** A simple neural network with a single input neuron and a single output neuron and a given number of hidden neurons. */
+class NeuralNet() {
+  private val _inputNeuron = new Neuron()
+  private val _outputNeuron = new Neuron()
+  private val _hiddenNeuron1 = new Neuron()
+  new Connection(_inputNeuron, _hiddenNeuron1)
+  new Connection(_hiddenNeuron1, _outputNeuron)
+  private val _hiddenNeurons = Array(_hiddenNeuron1)
+  private val learningConstant = 0.01
+
+  def backpropogate(deltaOutput : Double) {
+    updateOutputWeight(deltaOutput)
+    updateHiddenWeights(deltaOutput)
+  }
+
+  // Update the weights of connections to the output neuron
+  def updateOutputWeight(deltaOutput : Double) {
+    for (connection <- _outputNeuron.connections) {
+      println("=== Output Connection Weight Updating:")
+      val neuron = connection.a
+      val neuronOutput = neuron.output
+      println(s"neuronOutput = ${neuronOutput}")
+      val deltaWeight = neuronOutput * deltaOutput
+      println(s"deltaWeight = ${deltaWeight}")
+      println(s"Adjusting output connection weight to ${learningConstant * deltaWeight}")
+      connection.adjustWeight(learningConstant * deltaWeight)
+    }
+  }
+
+  /** Update the weights of the connections leading to the hidden layer */
+  def updateHiddenWeights(deltaOutput : Double) {
+    for (hiddenNeuron <- _hiddenNeurons) { // Update each hidden neuron's input connection weight
+      println("=== Hidden Input Connection Weight Updating:")
+      var outputConnectionSum = 0.0
+      var outputConnection : Option[Connection] = None
+      var inputConnection : Option[Connection] = None
+      for (connection <- hiddenNeuron.connections) {
+        if (connection.a == hiddenNeuron) { // This is the connection that goes to the output
+          outputConnection = Option(connection)
+        }
+        if (connection.b == hiddenNeuron) { // This is the connection that goes to the hidden layer, needs updating here
+          inputConnection = Option(connection)
+        }
+      }
+      outputConnectionSum += outputConnection.get.weight * deltaOutput
+      val neuronOutput = hiddenNeuron.output
+      val hiddenDelta = neuronOutput * (1 - neuronOutput) * outputConnectionSum
+      val deltaWeight = inputConnection.get.a.output * hiddenDelta
+      println(s"Adjusting input connection weight to ${learningConstant * deltaWeight}")
+      inputConnection.get.adjustWeight(learningConstant * deltaWeight)
+    }
+  }
+
+  //def scaleOutput(output : Double) : Double = { // Scale element e in [a, b] to [c, d] via (e-a)/(b-a)*(d-c)+c
+    //val a = 0.0
+    //val b = 1.0
+    //val c = 0.0
+    //val d = 0.5
+    //return (output - a)/(b - a)*(d - c) + c
+  //}
+
+  def feedforward(input : Double) : Double = {
+    _inputNeuron.input = input
+    _inputNeuron.updateOutput()
+    println(s"Updated inputNeuron to value ${_inputNeuron.output()}")
+    for (hiddenNeuron <- _hiddenNeurons) {
+      hiddenNeuron.updateOutput()
+    }
+    _outputNeuron.updateOutput()
+    return _outputNeuron.output()
+  }
+  
+  /** 
+  neurons <- 1
+ 
+# Creating an empty neural network which we represent as a matrix of weights
+InitNN <- function(){
+  n.weights <- neurons*board.size^2 + 2*neurons
+  matrix(runif(n.weights),nrow=neurons)
+}
+ 
+# Calculating the network
+RunNN <- function(nn, board){
+  w.out <- nn[,1]  
+  w0.in <- nn[,2]
+  w.in <- nn[,3:ncol(nn)]    
+  t(w.out) %*% tanh(w.in %*% as.vector(board) + w0.in)
+} 
+   */
+
+}
+
+//TrainNeuralNet.main(args)
 
