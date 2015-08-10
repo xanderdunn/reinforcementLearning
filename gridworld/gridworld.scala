@@ -235,4 +235,3 @@ class GridWorldPanel(gridWorld : GridWorld) extends JPanel {
 
 }
 
-GridWorldLearning.main(args)
