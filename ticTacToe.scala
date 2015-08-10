@@ -2,8 +2,7 @@
 
 // Convention: The Tic-tac-toe board with size n will have its spaces numbered 1 through n*n starting in the top left corner moving right along the row and continuing in the leftmost space on the row below.  Typically, n == 3.
 
-// TODO: Implement both Q-Learning and SARSA
-// TODO: Visualze the domain
+// TODO: Implement SARSA
 // TODO: Implement SARSA lambda (reach goal)
 // TODO: Implement (agent vs. agent) play, which should learn to always tie.
 
@@ -19,6 +18,7 @@ import scala.util.Random
 import scala.collection.mutable._
 
 object TicTacToeLearning {
+  /** Executed to initiate playing Tic-tac-toe with Q-Learning. */
   def main(args: Array[String]) {
     val frame = new JFrame("Tic Tac Toe")
     frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE)
@@ -42,12 +42,16 @@ object TicTacToeLearning {
     println(s"The Q-Learner won ${environment.xWins / environment.totalGames * 100}% of 100000 test games against a random player.")
     println(s"The random player won ${environment.oWins} of the 100000 test games.")
     println(s"${environment.stalemates} of the 100000 test games were stalemates.")
+
+    System.exit(0)
   }
 
   def iterateGameStep(agent : Agent, environment : Environment, epsilon : Double, frame : JFrame) {
       val action = agent.chooseAction(environment, epsilon)
       environment.applyAction(agent)
       frame.repaint()
+      // TODO: Show some text on the tic tac toe board when a certain player wins
+      // TODO: Fix the timing such that 
       //Thread.sleep(1)
   }
 
@@ -62,7 +66,7 @@ class TicTacToeWorld {
 }
 
 
-/** The agent object who makes decisions on where to places X's or O'.  Because there are two players, players are identified by an integer value.*/
+/** The agent object who makes decisions on where to places X's and O's.  Because there are two players, players are identified by an integer value.*/
 class Agent(_name : String) {
   val name = _name
   private var _state : List[String] = List.fill(9){""}
