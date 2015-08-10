@@ -93,7 +93,6 @@ class Agent() {
       val maxValueIndices = getStateValues(state).zipWithIndex.collect {
         case (element, index) if element == maxValue => index
       }
-      println(s"maxValueIndices == ${maxValueIndices}")
       _previousAction = MoveDirection(maxValueIndices(rand.nextInt(maxValueIndices.size)))
     }
     else { // Explore: Randomly choose an action
@@ -113,7 +112,6 @@ class Agent() {
       // TODO: Put a green tile at this state position if this value is non-negative
     }
     stateValues(_previousState)(_previousAction.id) += updateValue
-    println(stateValues)
   }
 
 }
