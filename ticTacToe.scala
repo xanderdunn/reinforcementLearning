@@ -9,7 +9,6 @@
 
 // TODO: Implement a multi-layer perceptron to approximate the value function
 
-//import java.awt._
 import java.awt.Graphics
 import java.awt.Font
 import java.awt.Graphics2D
@@ -28,16 +27,30 @@ object TicTacToeLearning {
     val ticTacToeWorld = new TicTacToeWorld()
     frame.setContentPane(ticTacToeWorld.ticTacToePanel)
     frame.setVisible(true)
+    val agent = ticTacToeWorld.agent
+    val environment = ticTacToeWorld.environment
 
-    while (true) {
-      val agent = ticTacToeWorld.agent
-      val environment = ticTacToeWorld.environment
-      val action = agent.chooseAction(environment)
+    println("Training 100000 games against a random player.")
+    while (environment.totalGames < 100000) { // Train for 100000 games
+      iterateGameStep(agent, environment, 10.0, frame)
+    }
+    environment.resetGameStats()
+    println("Testing the trained Q-Learner against 100000 games.")
+    while (environment.totalGames < 100000) {
+      iterateGameStep(agent, environment, 0.0, frame)
+    }
+    println(s"The Q-Learner won ${environment.xWins / environment.totalGames * 100}% of 100000 test games against a random player.")
+    println(s"The random player won ${environment.oWins} of the 100000 test games.")
+    println(s"${environment.stalemates} of the 100000 test games were stalemates.")
+  }
+
+  def iterateGameStep(agent : Agent, environment : Environment, epsilon : Double, frame : JFrame) {
+      val action = agent.chooseAction(environment, epsilon)
       environment.applyAction(agent)
       frame.repaint()
-      Thread.sleep(1)
-    }
+      //Thread.sleep(1)
   }
+
 }
 
 
@@ -81,17 +94,16 @@ class Agent(_name : String) {
           newStateValues(emptySpace) = 0.0
         }
         stateValues(state) = newStateValues
-        println(s"There are ${stateValues.size} stateValues")
       }
     }
     return stateValues(state)
   }
 
   /** Decide what to do given the current environment and return that action. */
-  def chooseAction(environment : Environment) : Int = {
+  def chooseAction(environment : Environment, exploreEpsilon : Double) : Int = {
     val rand = scala.util.Random
     val randomHundred = rand.nextInt(100)
-    if (randomHundred <= 89) { // Exploit: Choose the greedy action and break ties randomly
+    if (randomHundred <= (100 - exploreEpsilon - 1)) { // Exploit: Choose the greedy action and break ties randomly
       val stateValues = getStateValues(environment.spaceOwners.toList)
       val maxValue = stateValues.maxBy(_._2)._2
       val maxValueSpaces = ArrayBuffer[Int]()
@@ -114,7 +126,7 @@ class Agent(_name : String) {
       // Make sure they're initialized
       getStateValues(previousState)
       getStateValues(state)
-      val updateValue = (0.05)*((value + stateValues(state).maxBy(_._2)._2) - stateValues(previousState)(newlyOccupiedSpace)) // Q-Learning
+      val updateValue = (0.70)*((value + stateValues(state).maxBy(_._2)._2) - stateValues(previousState)(newlyOccupiedSpace)) // Q-Learning
       stateValues(previousState)(newlyOccupiedSpace) += updateValue
   }
 }
@@ -232,6 +244,13 @@ class Environment() {
   var stalemates = 0.0
   var totalGames = 0.0
 
+  def resetGameStats() {
+    xWins = 0.0
+    oWins = 0.0
+    stalemates = 0.0
+    totalGames = 0.0
+  }
+
   def endEpisode(agent : Agent) {
     spaceOwners = MutableList.fill(size*size){""}
     agent.previousState = List.fill(size*size){""}
@@ -258,17 +277,14 @@ class Environment() {
     if (xWon() == true) {
       agent.reward(1.0)
       xWins += 1.0
-      println("X WON!")
     }
     else if (oWon() == true) {
       agent.reward(0.0)
       oWins += 1.0
-      println("O WON!")
     }
     else if (EnvironmentUtilities.isFullBoard(spaceOwners.toList) == true) {
       agent.reward(0.5)
       stalemates += 1.0
-      println("Stalemate")
     }
     else {
       agent.reward(0.0)
@@ -276,9 +292,6 @@ class Environment() {
     if (isEndState() == true) {
       totalGames += 1.0
       endEpisode(agent)
-      println(s"X has won ${(xWins/totalGames)*100}% of ${totalGames} games")
-      println(s"O has won ${(oWins/totalGames)*100}% of games")
-      println(s"Stalemate has happened ${(stalemates/totalGames)*100}% of games")
     }
   }
 }
