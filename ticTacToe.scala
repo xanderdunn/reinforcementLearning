@@ -1,12 +1,10 @@
 // Learn an agent to play a game of Tic-tac-toe using reinforcement learning with an approximated value function.  
 
-// Convention: The Tic-tac-toe board with size n will have its spaces numbered 1 through n*n starting in the top left corner moving right along the row and continuing in the leftmost space on the row below.  Typically, n == 3.
+// Convention: The Tic-tac-toe board with size n*n will have its spaces numbered 1 through n*n starting in the top left corner moving right along the row and continuing in the leftmost space on the row below.  
 
 // TODO: Implement SARSA
-// TODO: Implement SARSA lambda
 // TODO: Implement agent vs. agent play, which should learn to always tie.
 
-import nn._
 import java.awt.Graphics
 import java.awt.Font
 import java.awt.Graphics2D
@@ -86,20 +84,20 @@ class TicTacToeWorld(_tabular : Boolean) {
 
 object NeuralNetUtilities {
     /** Take a state and represent it in a way that can be fed into the neural net */
-  def neuralNetFeatureVectorForStateAction(state : List[String], action : Int) : Array[Float] = {
-    val featureVector : ArrayBuffer[Float] = ArrayBuffer()
+  def neuralNetFeatureVectorForStateAction(state : List[String], action : Int) : Array[Double] = {
+    val featureVector : ArrayBuffer[Double] = ArrayBuffer()
     for (owner <- state) {
       if (owner == "X") {
-        featureVector += 1.0.toFloat
+        featureVector += 1.0
       }
       else if (owner == "O") {
-        featureVector += -1.0.toFloat
+        featureVector += -1.0
       }
       else {
-        featureVector += 0.0.toFloat
+        featureVector += 0.0
       }
     }
-    featureVector += action.toFloat
+    featureVector += action
     return featureVector.toArray
   }
 }
@@ -119,9 +117,9 @@ class Agent(_name : String, _tabular : Boolean) {
   var newlyOccupiedSpace = 0
   val stateValues = Map[List[String], Map[Int, Double]]()  // The state-value function is stored in a map with keys that are environment states of the Tic-tac-toe board and values that are arrays of the value of each possible action in this state.  A possible action is any space that is not currently occupied.  
   def tabular = _tabular
-  var neuralNet : Option[Network] = None
+  var neuralNet : Option[NeuralNet] = None
   if (tabular == false) {
-    neuralNet = Option(new Network(10, 26))
+    neuralNet = Option(new NeuralNet(10, 26))
   }
 
   /** Convenience method for initializing values for a given state if not already initialized */
@@ -215,7 +213,7 @@ class Agent(_name : String, _tabular : Boolean) {
       val discountRate = 0.2
       val learningRate = 0.2 
       val targetValue = previousStateValue + learningRate * (reward + discountRate * stateMaxValue - previousStateValue)  // q(s,a) + learningrate * (reward + discountRate * q'(s,a) - q(s,a))
-      neuralNet.get.train(previousStateFeatureVector, targetValue.toFloat)
+      neuralNet.get.train(previousStateFeatureVector, targetValue)
     }
   }
 }
@@ -446,29 +444,40 @@ class TicTacToePanel(gridWorld : TicTacToeWorld) extends JPanel {
 TicTacToeLearning.main(args)
 
 /** A single neuron in the network, responsible for calculating values */
-class Neuron() {
+class Neuron(_isBiasNeuon : Boolean) {
   private var _sum = 0.0
   var connections : ArrayBuffer[Connection] = ArrayBuffer()
   var input = 0.0
+  def isBiasNeuron = _isBiasNeuon
+  if (isBiasNeuron) {
+    _sum = 0.15 // This is in the range [0, f(n)] where n is the number of input neurons and f(x) = 1/sqrt(n).   See here: http://neuralnetworksanddeeplearning.com/chap3.html#weight_initialization
+  }
   
   /* This is called externally when something has changed so that this neuron's value needs to be updated. */
   def updateOutput() {
-    var sum = 0.0
-    var hasInputConnection = false
-    for (connection <- connections) {
-      if (connection.b == this) { // This is a connection that inputs into this neuron
-        hasInputConnection = true
-        val inputNeuron = connection.a
-        sum += inputNeuron.output()*connection.weight
+    if (isBiasNeuron == false) { // Bias neurons have no calculations to perform
+      var sum = 0.0
+      var bias = 0.0
+      var hasInputConnection = false
+      for (connection <- connections) {
+        if (connection.b == this) { // This is a connection that inputs into this neuron
+          hasInputConnection = true
+          val inputNeuron = connection.a
+          val weightedValue = inputNeuron.output()*connection.weight
+          if (connection.a.isBiasNeuron == true) {
+            bias = weightedValue
+          }
+          else {
+            sum += weightedValue
+          }
+        }
       }
-    }
-    if (hasInputConnection == true) {
-      println(s"Got sum ${sum}")
-      _sum = sigmoid(sum)
-      println(s"Updated hidden or output connection to ${_sum}")
-    }
-    else { // This is an input neuron
-      _sum = input
+      if (hasInputConnection == true) {
+        _sum = sigmoid(sum + bias)
+      }
+      else { // This is an input neuron
+        _sum = input
+      }
     }
   }
 
@@ -495,65 +504,50 @@ class Connection(_a : Neuron, _b : Neuron) {
   def b = _b
   a.connections += this
   b.connections += this
-  //var weight : Double = nextDouble() TODO Make this random again
-  var weight : Double = 0.5
+  var weight : Double = nextDouble() * 2 - 1
 
   def adjustWeight(deltaWeight : Double) {
     weight += deltaWeight
   }
 }
 
-// Working x=y
-object TrainTestNet {
-  def main(args: Array[String]) {
-    var i = 0
-    val net = new Network(1, 1)
-    while (i < 100000) {
-      val input = nextDouble()
-      val result = net.train(Array(input.toFloat), input.toFloat)
-      println(s"result = ${result}")
-      println(s"expected = ${input}")
-      println(s"${i} iterations")
-      println("")
-      i += 1
-    }
-  }
-}
-
-//TrainTestNet.main(args)
-
-object TrainNeuralNet {
-  def main(args: Array[String]) {
-    val neuralNet = new NeuralNet()
-    var i = 0
-    println("Training the neural net on 1000 samples")
-    while (i < 1000000000) { // Train
-      val randomX = nextDouble()
-      val prediction = neuralNet.feedforward(randomX)
-      val actual = testFunction(randomX)
-      println(s"Predicted ${prediction}, actual output is ${actual}")
-      val error = actual - prediction
-      println(s"error = ${error} = ${actual} - ${prediction}")
-      val deltaOutput = prediction * (1 - prediction) * error
-      println(s"deltaOutput = ${deltaOutput} = ${prediction} * (1 - ${prediction}) * ${error}")
-      neuralNet.backpropogate(deltaOutput)
-      i += 1
-      println("")
-    }
-    i = 0
-  }
-}
-
 
 /** A simple neural network with a single input neuron and a single output neuron and a given number of hidden neurons. */
-class NeuralNet() {
-  private val _inputNeuron = new Neuron()
-  private val _outputNeuron = new Neuron()
-  private val _hiddenNeuron1 = new Neuron()
-  new Connection(_inputNeuron, _hiddenNeuron1)
-  new Connection(_hiddenNeuron1, _outputNeuron)
-  private val _hiddenNeurons = Array(_hiddenNeuron1)
-  private val learningConstant = 0.01
+class NeuralNet(numberInputNeurons : Int , numberHiddenNeurons : Int) {
+  private val _outputNeuron = new Neuron(false)
+  private val _hiddenNeurons : ArrayBuffer[Neuron] = ArrayBuffer()
+  private val _inputNeurons : ArrayBuffer[Neuron] = ArrayBuffer()
+  private val learningRate = 0.9
+
+  for (i <- 0 until numberInputNeurons) { // Create input neurons
+    _inputNeurons += new Neuron(false)
+  }
+
+  for (i <- 0 until numberHiddenNeurons) { // Create hidden neurons
+    _hiddenNeurons += new Neuron(false)
+  }
+
+  // Create bias neurons
+  _inputNeurons += new Neuron(true)
+  _hiddenNeurons += new Neuron(true)
+
+  for (inputNeuron <- _inputNeurons) {
+    for (hiddenNeuron <- _hiddenNeurons) {
+      new Connection(inputNeuron, hiddenNeuron)   // Connect the inputs to the hidden neurons
+    }
+  }
+
+  for (hiddenNeuron <- _hiddenNeurons) {
+    new Connection(hiddenNeuron, _outputNeuron) // Connect the hidden neuron to the output neuron
+  }
+
+  def train(input : Array[Double], actual : Double) : Double = {
+    val result = feedForward(input)
+    val error = actual - result
+    val deltaOutput = result * (1 - result) * error
+    backpropogate(deltaOutput)
+    return result
+  }
 
   def backpropogate(deltaOutput : Double) {
     updateOutputWeight(deltaOutput)
@@ -563,45 +557,43 @@ class NeuralNet() {
   /** Update the weights of connections to the output neuron */
   def updateOutputWeight(deltaOutput : Double) {
     for (connection <- _outputNeuron.connections) {
-      println("=== Output Connection Weight Updating:")
       val neuron = connection.a
       val neuronOutput = neuron.output
-      println(s"neuronOutput = ${neuronOutput}")
       val deltaWeight = neuronOutput * deltaOutput
-      println(s"deltaWeight = ${deltaWeight}")
-      println(s"Adjusting output connection weight to ${learningConstant * deltaWeight}")
-      connection.adjustWeight(learningConstant * deltaWeight)
+      connection.adjustWeight(learningRate * deltaWeight)
     }
   }
 
   /** Update the weights of the connections leading to the hidden layer */
   def updateHiddenWeights(deltaOutput : Double) {
     for (hiddenNeuron <- _hiddenNeurons) { // Update each hidden neuron's input connection weight
-      println("=== Hidden Input Connection Weight Updating:")
-      var outputConnectionSum = 0.0
-      var outputConnection : Option[Connection] = None
-      var inputConnection : Option[Connection] = None
-      for (connection <- hiddenNeuron.connections) {
-        if (connection.a == hiddenNeuron) { // This is the connection that goes to the output
-          outputConnection = Option(connection)
+      if (hiddenNeuron.isBiasNeuron == false) {
+        var outputConnectionSum = 0.0
+        for (connection <- hiddenNeuron.connections) {
+          if (connection.a == hiddenNeuron) { // From hidden layer to output layer
+            outputConnectionSum += connection.weight * deltaOutput
+          }
         }
-        if (connection.b == hiddenNeuron) { // This is the connection that goes to the hidden layer, needs updating here
-          inputConnection = Option(connection)
+        for (connection <- hiddenNeuron.connections) {
+          if (connection.b == hiddenNeuron) { // From input layer to hidden layer
+            val hiddenNeuronOutput = hiddenNeuron.output
+            val hiddenDelta = hiddenNeuronOutput * (1 - hiddenNeuronOutput) * outputConnectionSum
+            val deltaWeight = connection.a.output * hiddenDelta
+            connection.adjustWeight(learningRate * deltaWeight)
+          }
         }
       }
-      outputConnectionSum += outputConnection.get.weight * deltaOutput
-      val neuronOutput = hiddenNeuron.output
-      val hiddenDelta = neuronOutput * (1 - neuronOutput) * outputConnectionSum
-      val deltaWeight = inputConnection.get.a.output * hiddenDelta
-      println(s"Adjusting input connection weight to ${learningConstant * deltaWeight}")
-      inputConnection.get.adjustWeight(learningConstant * deltaWeight)
     }
   }
 
-  def feedforward(input : Double) : Double = {
-    _inputNeuron.input = input
-    _inputNeuron.updateOutput()
-    println(s"Updated inputNeuron to value ${_inputNeuron.output()}")
+  def feedForward(inputs : Array[Double]) : Double = {
+    var i = 0
+    for (input <- inputs) {
+      val inputNeuron = _inputNeurons(i)
+      inputNeuron.input = input
+      inputNeuron.updateOutput() // Make sure it stores the new input value
+      i += 1
+    }
     for (hiddenNeuron <- _hiddenNeurons) {
       hiddenNeuron.updateOutput()
     }
@@ -609,6 +601,4 @@ class NeuralNet() {
     return _outputNeuron.output()
   }
 }
-
-//TrainNeuralNet.main(args)
 
