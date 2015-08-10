@@ -24,9 +24,9 @@ object TicTacToeLearning {
     frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE)
     frame.setSize(180, 180)
 
-    //val ticTacToeWorldTabular = new TicTacToeWorld(true)
+    val ticTacToeWorldTabular = new TicTacToeWorld(true)
     val ticTacToeWorldNeuralNet = new TicTacToeWorld(false)
-    val worlds = Array(/*ticTacToeWorldTabular,*/ ticTacToeWorldNeuralNet)
+    val worlds = Array(ticTacToeWorldTabular, ticTacToeWorldNeuralNet)
     for (ticTacToeWorld <- worlds) {
       var trainSteps = 100000
       var testSteps = 100000
@@ -61,6 +61,7 @@ object TicTacToeLearning {
     System.exit(0)
   }
 
+  /** Take one step in the game: The player takes an action, the other player responds, and the board hands out reward. */
   def iterateGameStep(ticTacToeWorld : TicTacToeWorld, epsilon : Double, frame : JFrame) {
     val agent = ticTacToeWorld.agent
     val environment = ticTacToeWorld.environment
@@ -68,8 +69,8 @@ object TicTacToeLearning {
     environment.applyAction(agent)
     frame.repaint()
     // TODO: Show some text on the tic tac toe board when a certain player wins
-    // TODO: Fix the timing such that 
-    //Thread.sleep(1)
+    // TODO: Fix the timing such that the end state is visible to the user for a moment.
+    //Thread.sleep(500)
   }
 
 }
@@ -147,10 +148,10 @@ class Agent(_name : String, _tabular : Boolean) {
     return stateValues(state)
   }
 
-  /** */
+  /** Query the neural network for the maximum value for the given board state.  The return tuple is the (maximumValue, correspondingAction) */
   def maxNeuralNetValueAndActionForState(state : List[String]) : (Double, Int) = {
     val possibleMoves = EnvironmentUtilities.emptySpaces(state)
-    var maxValue = 0.0  // TODO: I'll need to store this somewhere to update the neural net later
+    var maxValue = 0.0
     var greedyAction  = 0
     for (possibleMove <- possibleMoves) {
       val input = neuralNetFeatureVectorForStateAction(state, possibleMove)
@@ -163,6 +164,7 @@ class Agent(_name : String, _tabular : Boolean) {
     return (maxValue, greedyAction)
   }
 
+  /** The agent chooses the next action to take. */
   def chooseAction(exploreEpsilon : Double) {
     val randomHundred = nextInt(100)
     if (randomHundred <= (100 - exploreEpsilon - 1)) { // Exploit: Choose the greedy action and break ties randomly
@@ -219,18 +221,21 @@ class Agent(_name : String, _tabular : Boolean) {
 }
 
 object EnvironmentUtilities {
-    def spacesOccupiedByAgent(agent : Agent, spaceOwners : List[String]) : List[Int] = {
+  /** Return all spaces where the given agent currently has its mark. */
+  def spacesOccupiedByAgent(agent : Agent, spaceOwners : List[String]) : List[Int] = {
     return spaceOwners.zipWithIndex.collect {
       case (element, index) if element == agent.name => index + 1
     }
   }
 
+  /** Return all spaces that have any player on it. */
   def occupiedSpaces(spaceOwners : List[String]) : List[Int] = {
     return spaceOwners.zipWithIndex.collect {
       case (element, index) if element != "" => index + 1
     }
   }
 
+  /** Return a list of all spaces that are not occupied by any player. */
   def emptySpaces(spaceOwners : List[String]) : List[Int] = {
     return spaceOwners.zipWithIndex.collect {
       case (element, index) if element == "" => index + 1
@@ -293,26 +298,28 @@ class Environment() {
     }
   }
 
+  /** Check if player X won. */
   def xWon() : Boolean = {
-    val xSpaces = spaceOwners.zipWithIndex.collect {
-      case (element, index) if element == "X" => index + 1
-    }
-    if (isWinningBoard(xSpaces.toList) == true) {
-      return true
-    }
-    return false
+    return playerWon("X")
   }
 
+  /** Check if player O won. */
   def oWon() : Boolean = {
-    val oSpaces = spaceOwners.zipWithIndex.collect {
-      case (element, index) if element == "O" => index + 1
+    return playerWon("O")
+  }
+
+  /** Check if the given player won. */
+  def playerWon(playerMark : String) : Boolean = {
+    val ownedSpaces = spaceOwners.zipWithIndex.collect {
+      case (element, index) if element == playerMark => index + 1
     }
-    if (isWinningBoard(oSpaces.toList) == true) {
+    if (isWinningBoard(ownedSpaces.toList) == true) {
       return true
     }
     return false
   }
 
+  /** Check if the current board state is the end of a game because someone won or it's a tie. */
   def isEndState() : Boolean = {
     if (xWon() == true) {
       return true
@@ -326,11 +333,13 @@ class Environment() {
     return false
   }
 
+  /** Statistics to track the progress of the players through episodes. */
   var xWins = 0.0
   var oWins = 0.0
   var stalemates = 0.0
   var totalGames = 0.0
 
+  /** Clear the statistics */
   def resetGameStats() {
     xWins = 0.0
     oWins = 0.0
@@ -338,12 +347,14 @@ class Environment() {
     totalGames = 0.0
   }
 
+  /** Reset the agent and states for a new episode */
   def endEpisode(agent : Agent) {
     spaceOwners = MutableList.fill(size*size){""}
     agent.previousState = List.fill(size*size){""}
     agent.state = List.fill(size*size){""}
   }
 
+  /** Make the action most recently chosen by the agent take effect. */
   def applyAction(agent : Agent) {
     spaceOwners(agent.newlyOccupiedSpace - 1) = "X" // Take the space chosen by X
     if (isEndState() == true) { // X's move just pushed it into either a winning state or a stalemate
@@ -434,12 +445,13 @@ class TicTacToePanel(gridWorld : TicTacToeWorld) extends JPanel {
 
 TicTacToeLearning.main(args)
 
+/** A single neuron in the network, responsible for calculating values */
 class Neuron() {
   private var _sum = 0.0
   var connections : ArrayBuffer[Connection] = ArrayBuffer()
   var input = 0.0
   
-  // TODO: The input neuron needs to output the input value
+  /* This is called externally when something has changed so that this neuron's value needs to be updated. */
   def updateOutput() {
     var sum = 0.0
     var hasInputConnection = false
@@ -460,10 +472,12 @@ class Neuron() {
     }
   }
 
-  def sigmoid(input : Double) : Double = { // sigmoid activation function
+  /** Sigmoid activation function */
+  def sigmoid(input : Double) : Double = {
     return 1.0 / (1.0 + Math.exp(-input))
   }
 
+  /** Return the most recently calculated value */
   def output() : Double = {
     return _sum
   }
@@ -475,6 +489,7 @@ def testFunction(input : Double) : Double = {
 }
 
 
+/** A connection is the bond between two neurons.  a is the source of a signal and it's sent to b, modified by the weight of this connection. */
 class Connection(_a : Neuron, _b : Neuron) {
   def a = _a
   def b = _b
@@ -488,63 +503,22 @@ class Connection(_a : Neuron, _b : Neuron) {
   }
 }
 
-// Working XOR
-//object TrainTestNet {
-  //def main(args: Array[String]) {
-    //var i = 0
-    //val net = new Network(2, 4)
-    //while (i < 10000) {
-      //val inp = Array(nextDouble().round.toFloat, nextDouble().round.toFloat)
-      //println(s"${inp.mkString(", ")}")
-      //var known = 1.0
-      //if ((inp(0) == 1.0 && inp(1) == 1.0) || (inp(0) == 0.0 && inp(1) == 0.0)) {
-        //known = 0.0
-      //}
-      //val result = net.train(inp, known.toFloat)
-      //println(s"result = ${result}")
-      //println(s"expected = ${known}")
-      //println(s"${i} iterations")
-      //println("")
-      //i += 1
-    //}
-  //}
-//}
-
 // Working x=y
-//object TrainTestNet {
-  //def main(args: Array[String]) {
-    //var i = 0
-    //val net = new Network(1, 1)
-    //while (i < 100000) {
-      //val input = nextDouble()
-      //val result = net.train(Array(input.toFloat), input.toFloat)
-      //println(s"result = ${result}")
-      //println(s"expected = ${input}")
-      //println(s"${i} iterations")
-      //println("")
-      //i += 1
-    //}
-  //}
-//}
-
-// Working sin(x)
-//object TrainTestNet {
-  //def main(args: Array[String]) {
-    //var i = 0
-    //val net = new Network(1, 20)
-    //while (i < 100000) {
-      //val input = nextFloat()
-      //val expected = Math.sin(input)
-      //val result = net.train(Array(input), expected.toFloat)
-      //println(s"input = ${input}")
-      //println(s"result = ${result}")
-      //println(s"expected = ${expected}")
-      //println(s"${i} iterations")
-      //println("")
-      //i += 1
-    //}
-  //}
-//}
+object TrainTestNet {
+  def main(args: Array[String]) {
+    var i = 0
+    val net = new Network(1, 1)
+    while (i < 100000) {
+      val input = nextDouble()
+      val result = net.train(Array(input.toFloat), input.toFloat)
+      println(s"result = ${result}")
+      println(s"expected = ${input}")
+      println(s"${i} iterations")
+      println("")
+      i += 1
+    }
+  }
+}
 
 //TrainTestNet.main(args)
 
@@ -567,14 +541,6 @@ object TrainNeuralNet {
       println("")
     }
     i = 0
-    //println("Testing the neural net on 1000 samples")
-    //while (i < 1000) { // Test
-      //val randomX = nextDouble()
-      //val prediction = neuralNet.feedforward(randomX)
-      //val actual = testFunction(randomX)
-      //println(s"Predicted ${prediction}, actual output is ${actual}")
-      //i += 1
-    //}
   }
 }
 
@@ -594,7 +560,7 @@ class NeuralNet() {
     updateHiddenWeights(deltaOutput)
   }
 
-  // Update the weights of connections to the output neuron
+  /** Update the weights of connections to the output neuron */
   def updateOutputWeight(deltaOutput : Double) {
     for (connection <- _outputNeuron.connections) {
       println("=== Output Connection Weight Updating:")
@@ -632,14 +598,6 @@ class NeuralNet() {
     }
   }
 
-  //def scaleOutput(output : Double) : Double = { // Scale element e in [a, b] to [c, d] via (e-a)/(b-a)*(d-c)+c
-    //val a = 0.0
-    //val b = 1.0
-    //val c = 0.0
-    //val d = 0.5
-    //return (output - a)/(b - a)*(d - c) + c
-  //}
-
   def feedforward(input : Double) : Double = {
     _inputNeuron.input = input
     _inputNeuron.updateOutput()
@@ -650,25 +608,6 @@ class NeuralNet() {
     _outputNeuron.updateOutput()
     return _outputNeuron.output()
   }
-  
-  /** 
-  neurons <- 1
- 
-# Creating an empty neural network which we represent as a matrix of weights
-InitNN <- function(){
-  n.weights <- neurons*board.size^2 + 2*neurons
-  matrix(runif(n.weights),nrow=neurons)
-}
- 
-# Calculating the network
-RunNN <- function(nn, board){
-  w.out <- nn[,1]  
-  w0.in <- nn[,2]
-  w.in <- nn[,3:ncol(nn)]    
-  t(w.out) %*% tanh(w.in %*% as.vector(board) + w0.in)
-} 
-   */
-
 }
 
 //TrainNeuralNet.main(args)
