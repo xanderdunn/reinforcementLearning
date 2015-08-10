@@ -1,6 +1,6 @@
 // Learn an agent to play a game of Tic-tac-toe using reinforcement learning with an approximated value function.  
 
-// Convention: The Tic-tac-toe board with size n*n will have its spaces numbered 1 through n*n starting in the top left corner moving right along the row and continuing in the leftmost space on the row below.  
+// Convention: The Tic-tac-toe board with size 9 will have its spaces numbered 1 through 9 starting in the top left corner moving right along the row and continuing in the leftmost space on the row below.  
 
 // TODO: Implement SARSA
 // TODO: Implement agent vs. agent play, which should learn to always tie.
