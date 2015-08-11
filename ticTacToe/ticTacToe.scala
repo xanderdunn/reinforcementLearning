@@ -106,10 +106,7 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
   var newlyOccupiedSpace = 0
   val stateValues = Map[List[String], Map[Int, Double]]()  // The state-value function is stored in a map with keys that are environment states of the Tic-tac-toe board and values that are arrays of the value of each possible action in this state.  A possible action is any space that is not currently occupied.  
   def tabular = _tabular
-  var neuralNet : Option[NeuralNet] = None
-  if (tabular == false) {
-    neuralNet = Option(new NeuralNet(10, 26))
-  }
+  val neuralNet = new NeuralNet(10, 26)
   def random = _random
   var movedOnce = false // To know not to update the value function before its first action
 
@@ -142,7 +139,7 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
     var greedyAction  = 0
     for (possibleMove <- possibleMoves) {
       val input = neuralNetFeatureVectorForStateAction(state, possibleMove)
-      val value = neuralNet.get.feedForward(input.toArray)
+      val value = neuralNet.feedForward(input.toArray)
       if (value > maxValue) {
         greedyAction = possibleMove
         maxValue = value
@@ -204,12 +201,12 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
       }
       else {
         val previousStateFeatureVector = neuralNetFeatureVectorForStateAction(previousState, newlyOccupiedSpace)
-        val previousStateValue = neuralNet.get.feedForward(previousStateFeatureVector)
+        val previousStateValue = neuralNet.feedForward(previousStateFeatureVector)
         val stateMaxValue = maxNeuralNetValueAndActionForState(state)._1
         val discountRate = 0.2
         val learningRate = 0.2 
         val targetValue = previousStateValue + learningRate * (reward + discountRate * stateMaxValue - previousStateValue)  // q(s,a) + learningrate * (reward + discountRate * q'(s,a) - q(s,a))
-        neuralNet.get.train(previousStateFeatureVector, targetValue)
+        neuralNet.train(previousStateFeatureVector, targetValue)
       }
     }
   }
