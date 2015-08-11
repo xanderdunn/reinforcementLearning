@@ -3,7 +3,9 @@
 // Convention: The Tic-tac-toe board with size 9 will have its spaces numbered 1 through 9 starting in the top left corner moving right along the row and continuing in the leftmost space on the row below.  
 
 // TODO: Implement SARSA
+// TODO: Implement SARSA(lambda)
 // TODO: Implement agent vs. agent play, which should learn to always tie.
+// TODO: Use [breeze](https://github.com/scalanlp/breeze/wiki/Quickstart#breeze-viz) or [wisp](https://github.com/quantifind/wisp) libraries to plot the performance of your learner over time.  x = Number of episodes used to train.  y = Average reward received.  Get this average by running the game 2000 times and store the value at each time step.
 
 // Standard Library
 import java.awt.Graphics
@@ -120,8 +122,7 @@ class Agent(_name : String, _tabular : Boolean) {
         val emptySpaces = EnvironmentUtilities.emptySpaces(state)
         val newStateValues = Map[Int, Double]()
         for (emptySpace <- emptySpaces) {
-          // If taking this space would result in a win, then set to 1.0
-          // If taking this space would result in a loss or stalemate, then set to 
+          // TODO: If taking this space would result in a win, then set to 1.0.  If taking this space would result in a loss or stalemate, then set to 0.0.  Otherwise, set to 0.5.
           newStateValues(emptySpace) = 0.0
         }
         stateValues(state) = newStateValues
