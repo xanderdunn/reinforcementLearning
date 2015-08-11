@@ -20,6 +20,7 @@ import scala.collection.mutable._
 // Custom
 import neuralNet._
 import neuralNet.NeuralNetUtilities._
+import EnvironmentUtilities._
 
 
 object TicTacToeLearning {
@@ -114,7 +115,7 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
   /** Convenience method for initializing values for a given state if not already initialized */
   def getStateValues(state : List[String]) : Map[Int, Double] = { 
     if (stateValues.contains(state) == false) { // Initialize the state values to 0
-      if (EnvironmentUtilities.isFullBoard(state) == true) {  // The state values in the stop state are always 0, so always return a map full of zeros
+      if (isFullBoard(state) == true) {  // The state values in the stop state are always 0, so always return a map full of zeros
         val zeroMap = Map[Int, Double]()
         for (i <- 1 until 10) {
           zeroMap(i) = 0.0
@@ -122,9 +123,8 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
         stateValues(state) = zeroMap
       }
       else {
-        val emptySpaces = EnvironmentUtilities.emptySpaces(state)
         val newStateValues = Map[Int, Double]()
-        for (emptySpace <- emptySpaces) {
+        for (emptySpace <- emptySpaces(state)) {
           // TODO: If taking this space would result in a win, then set to 1.0.  If taking this space would result in a loss or stalemate, then set to 0.0.  Otherwise, set to 0.5.
           newStateValues(emptySpace) = 0.0
         }
@@ -136,7 +136,7 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
 
   /** Query the neural network for the maximum value for the given board state.  The return tuple is the (maximumValue, correspondingAction) */
   def maxNeuralNetValueAndActionForState(state : List[String]) : (Double, Int) = {
-    val possibleMoves = EnvironmentUtilities.emptySpaces(state)
+    val possibleMoves = emptySpaces(state)
     var maxValue = 0.0
     var greedyAction  = 0
     for (possibleMove <- possibleMoves) {
@@ -162,8 +162,8 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
       }
     }
     else { // Explore: Randomly choose an action
-      val emptySpaces = EnvironmentUtilities.emptySpaces(state)
-      newlyOccupiedSpace = emptySpaces(nextInt(emptySpaces.size))
+      val prospectiveSpaces = emptySpaces(state)
+      newlyOccupiedSpace = prospectiveSpaces(nextInt(prospectiveSpaces.size))
     }
   }
 
@@ -206,6 +206,7 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
   }
 }
 
+/** Static convenience functions for handling the environment. */
 object EnvironmentUtilities {
   /** Return all spaces where the given agent currently has its mark. */
   def spacesOccupiedByAgent(agent : Agent, spaceOwners : List[String]) : List[Int] = {
@@ -313,7 +314,7 @@ class Environment() {
     if (oWon() == true) {
       return true
     }
-    if (EnvironmentUtilities.isFullBoard(spaceOwners.toList) == true) {
+    if (isFullBoard(spaceOwners.toList) == true) {
       return true
     }
     return false
@@ -347,8 +348,8 @@ class Environment() {
       giveReward(agent)  // newState = old + X's action
     }
     else { // If the game is not over, fill a space randomly with O and give reward. 
-      val emptySpaces = EnvironmentUtilities.emptySpaces(spaceOwners.toList)
-      val randomSpace = emptySpaces(nextInt(emptySpaces.size))
+      val prospectiveSpaces = emptySpaces(spaceOwners.toList)
+      val randomSpace = prospectiveSpaces(nextInt(prospectiveSpaces.size))
       spaceOwners(randomSpace - 1) = "O"
       giveReward(agent)  // newState = old + X's action + O action
     }
@@ -365,7 +366,7 @@ class Environment() {
       agent.reward(0.0)
       oWins += 1.0
     }
-    else if (EnvironmentUtilities.isFullBoard(spaceOwners.toList) == true) {
+    else if (isFullBoard(spaceOwners.toList) == true) {
       agent.reward(0.5)
       stalemates += 1.0
     }
