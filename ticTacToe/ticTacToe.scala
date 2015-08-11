@@ -406,7 +406,7 @@ class Environment(agent1 : Agent, agent2 : Agent) {
 
   /** Make the action most recently chosen by the agent take effect. */
   def applyAction(agent : Agent) {
-    spaceOwners.setSpaceOwner(agent.newlyOccupiedSpace, "X") // Take the space chosen by X
+    spaceOwners.setSpaceOwner(agent.newlyOccupiedSpace, agent.name) // Take the space chosen by X
     if (isEndState() == true) { // X's move just pushed it into either a winning state or a stalemate
       giveReward(agent)  // newState = old + X's action
       giveReward(getOtherAgent(agent))
