@@ -241,11 +241,39 @@ object EnvironmentUtilities {
   }
 }
 
+class TicTacToeBoard() {
+  private var spaceOwners = emptyMutableList()
+  case class CanNotMoveThereException(message: String) extends Exception(message)
+
+  def emptyMutableList() : MutableList[String] = {
+    return MutableList.fill(9){""}
+  }
+
+  def getList() : List[String] = {
+    return spaceOwners.toList
+  }
+
+  def setSpaceOwner(space : Int, newOwner : String) {
+    val existingOwner = spaceOwners(space - 1)
+    if (existingOwner != "") {
+      throw new CanNotMoveThereException(s"${newOwner} tried to place someone on space ${space}, but ${existingOwner} is already there.  Board = ${spaceOwners.mkString(", ")}")
+    }
+    else {
+      spaceOwners(space - 1) = newOwner
+    }
+  }
+
+  def resetBoard() {
+    spaceOwners = emptyMutableList()
+  }
+}
+
 /** The environment is responsible for transitioning state and giving reward. */
 class Environment() {
+  // TODO: Move this to the WorldPanel
   val gridWidth = 30    // Width of each box in the grid
   val size = 3
-  var spaceOwners = MutableList.fill(size*size){""}  // Array of each space on the board with the corresponding agent name that is currently occupying the space.  0 if no one is occupying the space.
+  var spaceOwners = new TicTacToeBoard()  // Array of each space on the board with the corresponding agent name that is currently occupying the space.  0 if no one is occupying the space.
   
   /** Take a position in the grid and return the left to right number that is the column this position is in. */
   def columnNumber(position : Int) : Int = {
@@ -262,6 +290,7 @@ class Environment() {
   }
 
   // TODO: The board could be represented in a clever way such that looking up the row and column numbers each time is not necessary.
+  // TODO: Move this to EnvironmentUtilities
   /** Take a list of all spots owned by a single agent.  This agent is in a winning state if it owns an entire row, an entire column, or an entire diagonal.*/
   def isWinningBoard(spaces : List[Int]) : Boolean = {
     if (spaces.size == 0) {
@@ -297,7 +326,7 @@ class Environment() {
 
   /** Check if the given player won. */
   def playerWon(playerMark : String) : Boolean = {
-    val ownedSpaces = spaceOwners.zipWithIndex.collect {
+    val ownedSpaces = spaceOwners.getList().zipWithIndex.collect {
       case (element, index) if element == playerMark => index + 1
     }
     if (isWinningBoard(ownedSpaces.toList) == true) {
@@ -314,7 +343,7 @@ class Environment() {
     if (oWon() == true) {
       return true
     }
-    if (isFullBoard(spaceOwners.toList) == true) {
+    if (isFullBoard(spaceOwners.getList()) == true) {
       return true
     }
     return false
@@ -336,45 +365,59 @@ class Environment() {
 
   /** Reset the agent and states for a new episode */
   def endEpisode(agent : Agent) {
-    spaceOwners = MutableList.fill(size*size){""}
+    spaceOwners.resetBoard()
     agent.previousState = List.fill(size*size){""}
     agent.state = List.fill(size*size){""}
   }
 
   /** Make the action most recently chosen by the agent take effect. */
   def applyAction(agent : Agent) {
-    spaceOwners(agent.newlyOccupiedSpace - 1) = "X" // Take the space chosen by X
+    spaceOwners.setSpaceOwner(agent.newlyOccupiedSpace, "X") // Take the space chosen by X
     if (isEndState() == true) { // X's move just pushed it into either a winning state or a stalemate
       giveReward(agent)  // newState = old + X's action
     }
     else { // If the game is not over, fill a space randomly with O and give reward. 
-      val prospectiveSpaces = emptySpaces(spaceOwners.toList)
+      val prospectiveSpaces = emptySpaces(spaceOwners.getList())
       val randomSpace = prospectiveSpaces(nextInt(prospectiveSpaces.size))
-      spaceOwners(randomSpace - 1) = "O"
+      spaceOwners.setSpaceOwner(randomSpace, "O")
       giveReward(agent)  // newState = old + X's action + O action
+    }
+  }
+
+  /** Determine who won and add it to the statistics */
+  def countEndState() {
+    totalGames += 1
+    if (xWon() == true) {
+      xWins += 1
+    }
+    else if (oWon() == true) {
+      oWins += 1
+    }
+    else if (isFullBoard(spaceOwners.getList())) {
+      stalemates += 1
+    }
+    else {
+      println("ERROR: It makes no sense to reach the end state and agent1 didn't win, agent 2 didn't win, and it wasn't a stalemate.")
     }
   }
 
   /** Update the agent's state and give it a reward for its ation. Return 1 if this is the end of the episode, 0 otherwise. */
   def giveReward(agent : Agent) {
-    agent.state = spaceOwners.toList
+    agent.state = spaceOwners.getList()
     if (xWon() == true) {
       agent.reward(1.0)
-      xWins += 1.0
     }
     else if (oWon() == true) {
       agent.reward(0.0)
-      oWins += 1.0
     }
-    else if (isFullBoard(spaceOwners.toList) == true) {
+    else if (isFullBoard(spaceOwners.getList()) == true) {
       agent.reward(0.5)
-      stalemates += 1.0
     }
     else {
       agent.reward(0.0)
     }
     if (isEndState() == true) {
-      totalGames += 1.0
+      countEndState()
       endEpisode(agent)
     }
   }
@@ -408,7 +451,7 @@ class TicTacToePanel(gridWorld : TicTacToeWorld) extends JPanel {
     val circleDiameter = 20
     val rectangleOffset = (worldOffset/2 - circleDiameter/2)/2 // Put it in the center of the grid's box
     var i = 1
-    for (owner <- environment.spaceOwners) {
+    for (owner <- environment.spaceOwners.getList()) {
       if (owner != "") {
         val py = environment.rowNumber(i)
         val px = environment.columnNumber(i)
