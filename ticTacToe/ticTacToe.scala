@@ -34,7 +34,7 @@ object TicTacToeLearning {
     val ticTacToeWorldNeuralNetBothRandom = new TicTacToeWorld(false, true, true)
     val ticTacToeWorldTabularRandom = new TicTacToeWorld(true, false, true)
     val ticTacToeWorldNeuralNetRandom = new TicTacToeWorld(false, false, true)
-    val worlds = Array(ticTacToeWorldTabularBothRandom, ticTacToeWorldNeuralNetBothRandom, ticTacToeWorldTabularRandom, ticTacToeWorldNeuralNetRandom)
+    val worlds = Array(/*ticTacToeWorldTabularBothRandom, ticTacToeWorldNeuralNetBothRandom,*/ ticTacToeWorldTabularRandom/*, ticTacToeWorldNeuralNetRandom*/)
     for (ticTacToeWorld <- worlds) {
       var trainSteps = 100000
       var testSteps = 100000
@@ -103,8 +103,9 @@ class TicTacToeWorld(_tabular : Boolean, agent1Random : Boolean, agent2Random : 
 
     /** Reset the agent and states for a new episode */
   def endEpisode() {
-    currentPlayer = agent1 // TODO: Make random
+    currentPlayer = environment.getOtherAgent(currentPlayer)
     firstPlayer = currentPlayer
+    println(s"firstPlayer = ${firstPlayer.name}")
     environment.spaceOwners.resetBoard()
     agent1.previousState = List.fill(9){""}
     agent1.state = List.fill(9){""}
