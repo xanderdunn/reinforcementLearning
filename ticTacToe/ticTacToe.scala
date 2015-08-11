@@ -107,10 +107,10 @@ class TicTacToeWorld(_tabular : Boolean, agent1Random : Boolean, agent2Random : 
     firstPlayer = currentPlayer
     environment.spaceOwners.resetBoard()
     agent1.previousState = List.fill(9){""}
-    agent1.state = List.fill(9*9){""}
+    agent1.state = List.fill(9){""}
     agent1.movedOnce = false
     agent2.previousState = List.fill(9){""}
-    agent2.state = List.fill(9*9){""}
+    agent2.state = List.fill(9){""}
     agent2.movedOnce = false
   }
 
