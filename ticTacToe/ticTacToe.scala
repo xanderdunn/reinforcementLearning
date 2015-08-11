@@ -71,7 +71,7 @@ object TicTacToeLearning {
   def iterateGameStep(ticTacToeWorld : TicTacToeWorld, epsilon : Double, frame : JFrame) {
     val agent = ticTacToeWorld.agent1
     val environment = ticTacToeWorld.environment
-    agent.chooseAction(epsilon)
+    agent.chooseAction(epsilon, environment.spaceOwners.getList())
     environment.applyAction(agent)
     frame.repaint()
     // TODO: Show some text on the tic tac toe board when a certain player wins
@@ -152,7 +152,7 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
   }
 
   /** The agent chooses the next action to take. */
-  def chooseAction(exploreEpsilon : Double) {
+  def chooseAction(exploreEpsilon : Double, boardState : List[String]) {
     movedOnce = true
     if (_random) {
       val prospectiveSpaces = emptySpaces(state)
@@ -162,10 +162,10 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
       val randomHundred = nextInt(100)
       if (randomHundred <= (100 - exploreEpsilon - 1)) { // Exploit: Choose the greedy action and break ties randomly
         if (tabular == true) {
-          newlyOccupiedSpace = tabularGreedyAction()
+          newlyOccupiedSpace = tabularGreedyAction(boardState)
         }
         else {
-          newlyOccupiedSpace = neuralNetGreedyAction()
+          newlyOccupiedSpace = neuralNetGreedyAction(boardState)
         }
       }
       else { // Explore: Randomly choose an action
@@ -176,13 +176,13 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
   }
 
   /** Use a neural network to choose the greedy action to take */
-  def neuralNetGreedyAction() : Int = {
-    return maxNeuralNetValueAndActionForState(state)._2
+  def neuralNetGreedyAction(boardState : List[String]) : Int = {
+    return maxNeuralNetValueAndActionForState(boardState)._2
   }
 
   /** Decide what to do given the current environment and return that action. */
-  def tabularGreedyAction() : Int = {
-    val stateValues = getStateValues(state)
+  def tabularGreedyAction(boardState : List[String]) : Int = {
+    val stateValues = getStateValues(boardState)
     val maxValue = stateValues.maxBy(_._2)._2
     val maxValueSpaces = ArrayBuffer[Int]()
     for ((key, value) <- stateValues) {
@@ -422,7 +422,7 @@ class Environment(agent1 : Agent, agent2 : Agent) {
     }
     else { // If the game is not over, fill a space randomly with O and give reward. 
       agent2.state = spaceOwners.getList()
-      val agentChosenRandomAction = agent2.chooseAction(0.0)
+      val agentChosenRandomAction = agent2.chooseAction(0.0, spaceOwners.getList())
       spaceOwners.setSpaceOwner(agent2.newlyOccupiedSpace, "O")
       giveReward(agent)  // newState = old + X's action + O action
     }
