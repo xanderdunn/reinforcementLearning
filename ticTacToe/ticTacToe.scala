@@ -111,6 +111,7 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
     neuralNet = Option(new NeuralNet(10, 26))
   }
   def random = _random
+  var movedOnce = false // To know not to update the value function before its first action
 
   /** Convenience method for initializing values for a given state if not already initialized */
   def getStateValues(state : List[String]) : Map[Int, Double] = { 
@@ -152,6 +153,7 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
 
   /** The agent chooses the next action to take. */
   def chooseAction(exploreEpsilon : Double) {
+    movedOnce = true
     if (_random) {
       val prospectiveSpaces = emptySpaces(state)
       newlyOccupiedSpace = prospectiveSpaces(nextInt(prospectiveSpaces.size))
@@ -193,21 +195,23 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
 
   /** The environment calls this to reward the agent for its action. */
   def reward(reward : Double) {
-    if (tabular) {
-      // Make sure they're initialized
-      getStateValues(previousState)
-      getStateValues(state)
-      val updateValue = (0.70)*((reward + stateValues(state).maxBy(_._2)._2) - stateValues(previousState)(newlyOccupiedSpace)) // Q-Learning
-      stateValues(previousState)(newlyOccupiedSpace) += updateValue
-    }
-    else {
-      val previousStateFeatureVector = neuralNetFeatureVectorForStateAction(previousState, newlyOccupiedSpace)
-      val previousStateValue = neuralNet.get.feedForward(previousStateFeatureVector)
-      val stateMaxValue = maxNeuralNetValueAndActionForState(state)._1
-      val discountRate = 0.2
-      val learningRate = 0.2 
-      val targetValue = previousStateValue + learningRate * (reward + discountRate * stateMaxValue - previousStateValue)  // q(s,a) + learningrate * (reward + discountRate * q'(s,a) - q(s,a))
-      neuralNet.get.train(previousStateFeatureVector, targetValue)
+    if (movedOnce == true && random == false) {
+      if (tabular) {
+        // Make sure they're initialized
+        getStateValues(previousState)
+        getStateValues(state)
+        val updateValue = (0.70)*((reward + stateValues(state).maxBy(_._2)._2) - stateValues(previousState)(newlyOccupiedSpace)) // Q-Learning
+        stateValues(previousState)(newlyOccupiedSpace) += updateValue
+      }
+      else {
+        val previousStateFeatureVector = neuralNetFeatureVectorForStateAction(previousState, newlyOccupiedSpace)
+        val previousStateValue = neuralNet.get.feedForward(previousStateFeatureVector)
+        val stateMaxValue = maxNeuralNetValueAndActionForState(state)._1
+        val discountRate = 0.2
+        val learningRate = 0.2 
+        val targetValue = previousStateValue + learningRate * (reward + discountRate * stateMaxValue - previousStateValue)  // q(s,a) + learningrate * (reward + discountRate * q'(s,a) - q(s,a))
+        neuralNet.get.train(previousStateFeatureVector, targetValue)
+      }
     }
   }
 }
@@ -372,8 +376,19 @@ class Environment(agent1 : Agent, agent2 : Agent) {
     spaceOwners.resetBoard()
     agent1.previousState = List.fill(size*size){""}
     agent1.state = List.fill(size*size){""}
+    agent1.movedOnce = false
     agent2.previousState = List.fill(size*size){""}
     agent2.state = List.fill(size*size){""}
+    agent2.movedOnce = false
+  }
+
+  def getOtherAgent(agent : Agent) : Agent = {
+    if (agent == agent1) {
+      return agent2
+    }
+    else {
+      return agent1
+    }
   }
 
   /** Make the action most recently chosen by the agent take effect. */
@@ -381,6 +396,7 @@ class Environment(agent1 : Agent, agent2 : Agent) {
     spaceOwners.setSpaceOwner(agent.newlyOccupiedSpace, "X") // Take the space chosen by X
     if (isEndState() == true) { // X's move just pushed it into either a winning state or a stalemate
       giveReward(agent)  // newState = old + X's action
+      giveReward(getOtherAgent(agent))
     }
     else { // If the game is not over, fill a space randomly with O and give reward. 
       agent2.state = spaceOwners.getList()
