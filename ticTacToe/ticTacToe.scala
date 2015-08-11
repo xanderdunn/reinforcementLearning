@@ -420,7 +420,7 @@ class Environment(agent1 : Agent, agent2 : Agent) {
     else { // If the game is not over, fill a space randomly with O and give reward. 
       otherAgent.state = spaceOwners.getList()
       val agentChosenRandomAction = otherAgent.chooseAction(0.0, spaceOwners.getList())
-      spaceOwners.setSpaceOwner(otherAgent.newlyOccupiedSpace, "O")
+      spaceOwners.setSpaceOwner(otherAgent.newlyOccupiedSpace, otherAgent.name)
       giveReward(agent)  // newState = old + X's action + O action
       giveReward(otherAgent)
     }
