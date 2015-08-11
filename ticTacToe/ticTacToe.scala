@@ -34,8 +34,8 @@ object TicTacToeLearning {
     val ticTacToeWorldNeuralNetRandom = new TicTacToeWorld(false, false, true)
     val worlds = Array(ticTacToeWorldTabularRandom, ticTacToeWorldNeuralNetRandom)
     for (ticTacToeWorld <- worlds) {
-      var trainSteps = 100000
-      var testSteps = 100000
+      var trainSteps = 10000
+      var testSteps = 10000
       if (ticTacToeWorld.tabular == true) {
         println("=== Tabular Q Learning:")
       }
@@ -322,6 +322,15 @@ class Environment(agent1 : Agent, agent2 : Agent) {
     }
   }
 
+  def otherPlayerWon(agent : Agent) : Boolean = {
+    if (agent.name == "X") {
+      return playerWon("O")
+    }
+    else {
+      return playerWon("X")
+    }
+  }
+
   /** Check if player X won. */
   def xWon() : Boolean = {
     return playerWon("X")
@@ -330,6 +339,10 @@ class Environment(agent1 : Agent, agent2 : Agent) {
   /** Check if player O won. */
   def oWon() : Boolean = {
     return playerWon("O")
+  }
+
+  def playerWon(agent : Agent) : Boolean = {
+    return playerWon(agent.name)
   }
 
   /** Check if the given player won. */
@@ -397,6 +410,8 @@ class Environment(agent1 : Agent, agent2 : Agent) {
     if (isEndState() == true) { // X's move just pushed it into either a winning state or a stalemate
       giveReward(agent)  // newState = old + X's action
       giveReward(getOtherAgent(agent))
+      countEndState()
+      endEpisode()
     }
     else { // If the game is not over, fill a space randomly with O and give reward. 
       agent2.state = spaceOwners.getList()
@@ -426,10 +441,10 @@ class Environment(agent1 : Agent, agent2 : Agent) {
   /** Update the agent's state and give it a reward for its ation. Return 1 if this is the end of the episode, 0 otherwise. */
   def giveReward(agent : Agent) {
     agent.state = spaceOwners.getList()
-    if (xWon() == true) {
+    if (playerWon(agent) == true) {
       agent.reward(1.0)
     }
-    else if (oWon() == true) {
+    else if (otherPlayerWon(agent) == true) {
       agent.reward(0.0)
     }
     else if (isFullBoard(spaceOwners.getList()) == true) {
@@ -437,10 +452,6 @@ class Environment(agent1 : Agent, agent2 : Agent) {
     }
     else {
       agent.reward(0.0)
-    }
-    if (isEndState() == true) {
-      countEndState()
-      endEpisode()
     }
   }
 }
