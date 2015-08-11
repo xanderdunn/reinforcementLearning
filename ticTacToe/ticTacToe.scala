@@ -34,8 +34,8 @@ object TicTacToeLearning {
     val ticTacToeWorldNeuralNetRandom = new TicTacToeWorld(false, false, true)
     val worlds = Array(ticTacToeWorldTabularRandom, ticTacToeWorldNeuralNetRandom)
     for (ticTacToeWorld <- worlds) {
-      var trainSteps = 10000
-      var testSteps = 10000
+      var trainSteps = 8000
+      var testSteps = 8000
       if (ticTacToeWorld.tabular == true) {
         println("=== Tabular Q Learning:")
       }
