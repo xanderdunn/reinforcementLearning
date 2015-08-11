@@ -151,7 +151,7 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
   /** The agent chooses the next action to take. */
   def chooseAction(exploreEpsilon : Double, boardState : List[String]) {
     if (_random) {
-      val prospectiveSpaces = emptySpaces(state)
+      val prospectiveSpaces = emptySpaces(boardState)
       newlyOccupiedSpace = prospectiveSpaces(nextInt(prospectiveSpaces.size))
     }
     else {
@@ -165,7 +165,7 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
         }
       }
       else { // Explore: Randomly choose an action
-        val prospectiveSpaces = emptySpaces(state)
+        val prospectiveSpaces = emptySpaces(boardState)
         newlyOccupiedSpace = prospectiveSpaces(nextInt(prospectiveSpaces.size))
       }
     }
