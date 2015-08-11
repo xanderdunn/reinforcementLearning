@@ -88,7 +88,7 @@ class TicTacToeWorld(_tabular : Boolean, agent1Random : Boolean, agent2Random : 
   val agent1 = new Agent("X", _tabular, agent1Random)
   val agent2 = new Agent("O", _tabular, agent2Random)
   val agents = List(agent1, agent2)
-  val environment = new Environment()
+  val environment = new Environment(agent1, agent2)
   val ticTacToePanel = new TicTacToePanel(this)
 }
 
@@ -152,18 +152,24 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
 
   /** The agent chooses the next action to take. */
   def chooseAction(exploreEpsilon : Double) {
-    val randomHundred = nextInt(100)
-    if (randomHundred <= (100 - exploreEpsilon - 1)) { // Exploit: Choose the greedy action and break ties randomly
-      if (tabular == true) {
-        newlyOccupiedSpace = tabularGreedyAction()
-      }
-      else {
-        newlyOccupiedSpace = neuralNetGreedyAction()
-      }
-    }
-    else { // Explore: Randomly choose an action
+    if (_random) {
       val prospectiveSpaces = emptySpaces(state)
       newlyOccupiedSpace = prospectiveSpaces(nextInt(prospectiveSpaces.size))
+    }
+    else {
+      val randomHundred = nextInt(100)
+      if (randomHundred <= (100 - exploreEpsilon - 1)) { // Exploit: Choose the greedy action and break ties randomly
+        if (tabular == true) {
+          newlyOccupiedSpace = tabularGreedyAction()
+        }
+        else {
+          newlyOccupiedSpace = neuralNetGreedyAction()
+        }
+      }
+      else { // Explore: Randomly choose an action
+        val prospectiveSpaces = emptySpaces(state)
+        newlyOccupiedSpace = prospectiveSpaces(nextInt(prospectiveSpaces.size))
+      }
     }
   }
 
@@ -269,7 +275,7 @@ class TicTacToeBoard() {
 }
 
 /** The environment is responsible for transitioning state and giving reward. */
-class Environment() {
+class Environment(agent1 : Agent, agent2 : Agent) {
   val size = 3
   var spaceOwners = new TicTacToeBoard()  // Array of each space on the board with the corresponding agent name that is currently occupying the space.  0 if no one is occupying the space.
   
@@ -375,9 +381,9 @@ class Environment() {
       giveReward(agent)  // newState = old + X's action
     }
     else { // If the game is not over, fill a space randomly with O and give reward. 
-      val prospectiveSpaces = emptySpaces(spaceOwners.getList())
-      val randomSpace = prospectiveSpaces(nextInt(prospectiveSpaces.size))
-      spaceOwners.setSpaceOwner(randomSpace, "O")
+      agent2.state = spaceOwners.getList()
+      val agentChosenRandomAction = agent2.chooseAction(0.0)
+      spaceOwners.setSpaceOwner(agent2.newlyOccupiedSpace, "O")
       giveReward(agent)  // newState = old + X's action + O action
     }
   }
