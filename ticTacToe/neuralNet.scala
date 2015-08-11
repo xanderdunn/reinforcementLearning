@@ -3,6 +3,27 @@ import scala.util.Random._
 
 package neuralNet {
 
+/** Static convenience functions for NeuralNets */
+object NeuralNetUtilities {
+    /** Take a state and represent it in a way that can be fed into the neural net */
+  def neuralNetFeatureVectorForStateAction(state : List[String], action : Int) : Array[Double] = {
+    val featureVector : ArrayBuffer[Double] = ArrayBuffer()
+    for (owner <- state) {
+      if (owner == "X") {
+        featureVector += 1.0
+      }
+      else if (owner == "O") {
+        featureVector += -1.0
+      }
+      else {
+        featureVector += 0.0
+      }
+    }
+    featureVector += action
+    return featureVector.toArray
+  }
+}
+
   /** A simple neural network with a single input neuron and a single output neuron and a given number of hidden neurons. */
   class NeuralNet(numberInputNeurons : Int , numberHiddenNeurons : Int) {
     private val _outputNeuron = new Neuron(false)

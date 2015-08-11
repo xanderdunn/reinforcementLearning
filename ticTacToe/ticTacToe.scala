@@ -17,6 +17,7 @@ import scala.util.Random._
 import scala.collection.mutable._
 // Custom
 import neuralNet._
+import neuralNet.NeuralNetUtilities._
 
 
 object TicTacToeLearning {
@@ -86,27 +87,6 @@ class TicTacToeWorld(_tabular : Boolean) {
   val ticTacToePanel = new TicTacToePanel(this)
 }
 
-object NeuralNetUtilities {
-    /** Take a state and represent it in a way that can be fed into the neural net */
-  def neuralNetFeatureVectorForStateAction(state : List[String], action : Int) : Array[Double] = {
-    val featureVector : ArrayBuffer[Double] = ArrayBuffer()
-    for (owner <- state) {
-      if (owner == "X") {
-        featureVector += 1.0
-      }
-      else if (owner == "O") {
-        featureVector += -1.0
-      }
-      else {
-        featureVector += 0.0
-      }
-    }
-    featureVector += action
-    return featureVector.toArray
-  }
-}
-
-import NeuralNetUtilities._
 
 /** The agent object who makes decisions on where to places X's and O's.  Because there are two players, players are identified by an integer value.*/
 class Agent(_name : String, _tabular : Boolean) {
