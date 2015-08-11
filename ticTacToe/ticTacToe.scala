@@ -368,10 +368,12 @@ class Environment(agent1 : Agent, agent2 : Agent) {
   }
 
   /** Reset the agent and states for a new episode */
-  def endEpisode(agent : Agent) {
+  def endEpisode() {
     spaceOwners.resetBoard()
-    agent.previousState = List.fill(size*size){""}
-    agent.state = List.fill(size*size){""}
+    agent1.previousState = List.fill(size*size){""}
+    agent1.state = List.fill(size*size){""}
+    agent2.previousState = List.fill(size*size){""}
+    agent2.state = List.fill(size*size){""}
   }
 
   /** Make the action most recently chosen by the agent take effect. */
@@ -422,7 +424,7 @@ class Environment(agent1 : Agent, agent2 : Agent) {
     }
     if (isEndState() == true) {
       countEndState()
-      endEpisode(agent)
+      endEpisode()
     }
   }
 }
