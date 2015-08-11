@@ -153,7 +153,6 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
 
   /** The agent chooses the next action to take. */
   def chooseAction(exploreEpsilon : Double, boardState : List[String]) {
-    movedOnce = true
     if (_random) {
       val prospectiveSpaces = emptySpaces(state)
       newlyOccupiedSpace = prospectiveSpaces(nextInt(prospectiveSpaces.size))
@@ -426,6 +425,7 @@ class Environment(agent1 : Agent, agent2 : Agent) {
       spaceOwners.setSpaceOwner(agent2.newlyOccupiedSpace, "O")
       giveReward(agent)  // newState = old + X's action + O action
     }
+    agent.movedOnce = true
   }
 
   /** Determine who won and add it to the statistics */
