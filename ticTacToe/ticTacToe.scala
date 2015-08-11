@@ -254,6 +254,8 @@ object EnvironmentUtilities {
 class TicTacToeBoard() {
   private var spaceOwners = emptyMutableList()
   case class CanNotMoveThereException(message: String) extends Exception(message)
+  case class TwoMovesInARow(message: String) extends Exception(message)
+  private var previousMarkMove = "" // The mark, X or O, of the last thing that was added to the board
 
   def emptyMutableList() : MutableList[String] = {
     return MutableList.fill(9){""}
@@ -264,6 +266,9 @@ class TicTacToeBoard() {
   }
 
   def setSpaceOwner(space : Int, newOwner : String) {
+    if (previousMarkMove == newOwner) {
+      throw new TwoMovesInARow(s"${newOwner} tried to make a move on the board, but it was the last player to make a move.  Can't make two moves in a row.")
+    }
     val existingOwner = spaceOwners(space - 1)
     if (existingOwner != "") {
       throw new CanNotMoveThereException(s"${newOwner} tried to place someone on space ${space}, but ${existingOwner} is already there.  Board = ${spaceOwners.mkString(", ")}")
@@ -406,7 +411,7 @@ class Environment(agent1 : Agent, agent2 : Agent) {
 
   /** Make the action most recently chosen by the agent take effect. */
   def applyAction(agent : Agent) {
-    spaceOwners.setSpaceOwner(agent.newlyOccupiedSpace, agent.name) // Take the space chosen by X
+    spaceOwners.setSpaceOwner(agent.newlyOccupiedSpace, agent.name) // Take the space chosen by the agent
     if (isEndState() == true) { // X's move just pushed it into either a winning state or a stalemate
       giveReward(agent)  // newState = old + X's action
       giveReward(getOtherAgent(agent))
