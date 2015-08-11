@@ -412,18 +412,20 @@ class Environment(agent1 : Agent, agent2 : Agent) {
 
   /** Make the action most recently chosen by the agent take effect. */
   def applyAction(agent : Agent) {
+    val otherAgent = getOtherAgent(agent)
     spaceOwners.setSpaceOwner(agent.newlyOccupiedSpace, agent.name) // Take the space chosen by the agent
     if (isEndState() == true) { // X's move just pushed it into either a winning state or a stalemate
       giveReward(agent)  // newState = old + X's action
-      giveReward(getOtherAgent(agent))
+      giveReward(otherAgent)
       countEndState()
       endEpisode()
     }
     else { // If the game is not over, fill a space randomly with O and give reward. 
-      agent2.state = spaceOwners.getList()
-      val agentChosenRandomAction = agent2.chooseAction(0.0, spaceOwners.getList())
-      spaceOwners.setSpaceOwner(agent2.newlyOccupiedSpace, "O")
+      otherAgent.state = spaceOwners.getList()
+      val agentChosenRandomAction = otherAgent.chooseAction(0.0, spaceOwners.getList())
+      spaceOwners.setSpaceOwner(otherAgent.newlyOccupiedSpace, "O")
       giveReward(agent)  // newState = old + X's action + O action
+      giveReward(otherAgent)
     }
     agent.movedOnce = true
   }
