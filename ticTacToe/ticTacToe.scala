@@ -280,6 +280,7 @@ class TicTacToeBoard() {
   }
 
   def resetBoard() {
+    previousMarkMove = ""
     spaceOwners = emptyMutableList()
   }
 }
