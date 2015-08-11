@@ -30,12 +30,14 @@ object TicTacToeLearning {
     frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE)
     frame.setSize(180, 180)
 
+    val ticTacToeWorldTabularBothRandom = new TicTacToeWorld(true, true, true)
+    val ticTacToeWorldNeuralNetBothRandom = new TicTacToeWorld(false, true, true)
     val ticTacToeWorldTabularRandom = new TicTacToeWorld(true, false, true)
     val ticTacToeWorldNeuralNetRandom = new TicTacToeWorld(false, false, true)
-    val worlds = Array(ticTacToeWorldTabularRandom, ticTacToeWorldNeuralNetRandom)
+    val worlds = Array(ticTacToeWorldTabularBothRandom, ticTacToeWorldNeuralNetBothRandom, ticTacToeWorldTabularRandom, ticTacToeWorldNeuralNetRandom)
     for (ticTacToeWorld <- worlds) {
-      var trainSteps = 8000
-      var testSteps = 8000
+      var trainSteps = 100000
+      var testSteps = 100000
       if (ticTacToeWorld.tabular == true) {
         println("=== Tabular Q Learning:")
       }
@@ -46,7 +48,6 @@ object TicTacToeLearning {
       }
       frame.setContentPane(ticTacToeWorld.ticTacToePanel)
       frame.setVisible(true)
-      val agent = ticTacToeWorld.agent1
       val environment = ticTacToeWorld.environment
 
       println(s"Training ${trainSteps} games against a random player.")
@@ -69,10 +70,17 @@ object TicTacToeLearning {
 
   /** Take one step in the game: The player takes an action, the other player responds, and the board hands out reward. */
   def iterateGameStep(ticTacToeWorld : TicTacToeWorld, epsilon : Double, frame : JFrame) {
-    val agent = ticTacToeWorld.agent1
+    val agent = ticTacToeWorld.currentPlayer
     val environment = ticTacToeWorld.environment
     agent.chooseAction(epsilon, environment.spaceOwners.getList())
-    environment.applyAction(agent)
+    environment.applyAction(agent, ticTacToeWorld.firstPlayer)
+    if (environment.isEndState()) {
+      environment.countEndState()
+      ticTacToeWorld.endEpisode()
+    }
+    else {
+      ticTacToeWorld.currentPlayer = environment.getOtherAgent(ticTacToeWorld.currentPlayer)
+    }
     frame.repaint()
     // TODO: Show some text on the tic tac toe board when a certain player wins
     // TODO: Fix the timing such that the end state is visible to the user for a moment.
@@ -90,6 +98,22 @@ class TicTacToeWorld(_tabular : Boolean, agent1Random : Boolean, agent2Random : 
   val agents = List(agent1, agent2)
   val environment = new Environment(agent1, agent2)
   val ticTacToePanel = new TicTacToePanel(this)
+  var currentPlayer = agent1
+  var firstPlayer = agent1
+
+    /** Reset the agent and states for a new episode */
+  def endEpisode() {
+    currentPlayer = agent1 // TODO: Make random
+    firstPlayer = currentPlayer
+    environment.spaceOwners.resetBoard()
+    agent1.previousState = List.fill(9){""}
+    agent1.state = List.fill(9*9){""}
+    agent1.movedOnce = false
+    agent2.previousState = List.fill(9){""}
+    agent2.state = List.fill(9*9){""}
+    agent2.movedOnce = false
+  }
+
 }
 
 
@@ -192,6 +216,7 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
   /** The environment calls this to reward the agent for its action. */
   def reward(reward : Double) {
     if (movedOnce == true && random == false) {
+      //println(s"Give reward ${reward} to ${name} moving from ${previousState} to ${state}")
       if (tabular) {
         // Make sure they're initialized
         getStateValues(previousState)
@@ -387,17 +412,6 @@ class Environment(agent1 : Agent, agent2 : Agent) {
     totalGames = 0.0
   }
 
-  /** Reset the agent and states for a new episode */
-  def endEpisode() {
-    spaceOwners.resetBoard()
-    agent1.previousState = List.fill(size*size){""}
-    agent1.state = List.fill(size*size){""}
-    agent1.movedOnce = false
-    agent2.previousState = List.fill(size*size){""}
-    agent2.state = List.fill(size*size){""}
-    agent2.movedOnce = false
-  }
-
   def getOtherAgent(agent : Agent) : Agent = {
     if (agent == agent1) {
       return agent2
@@ -408,21 +422,14 @@ class Environment(agent1 : Agent, agent2 : Agent) {
   }
 
   /** Make the action most recently chosen by the agent take effect. */
-  def applyAction(agent : Agent) {
-    val otherAgent = getOtherAgent(agent)
+  def applyAction(agent : Agent, firstPlayer : Agent) {
+    giveReward(agent) // For this agent's previous move that wasn't rewarded yet because the subsequent player's move could have put it into an end state
     spaceOwners.setSpaceOwner(agent.newlyOccupiedSpace, agent.name) // Take the space chosen by the agent
-    if (isEndState() == true) { // X's move just pushed it into either a winning state or a stalemate
-      giveReward(agent)  // newState = old + X's action
-      giveReward(otherAgent)
-      countEndState()
-      endEpisode()
-    }
-    else { // If the game is not over, fill a space randomly with O and give reward. 
-      otherAgent.state = spaceOwners.getList()
-      val agentChosenRandomAction = otherAgent.chooseAction(0.0, spaceOwners.getList())
-      spaceOwners.setSpaceOwner(otherAgent.newlyOccupiedSpace, otherAgent.name)
-      giveReward(agent)  // newState = old + X's action + O action
-      giveReward(otherAgent)
+    //println(s"${agent.name} took space ${agent.newlyOccupiedSpace}")
+    val otherPlayer = getOtherAgent(agent)
+    if (isEndState() == true) {
+      giveReward(agent)
+      giveReward(otherPlayer)
     }
     agent.movedOnce = true
   }
@@ -451,13 +458,14 @@ class Environment(agent1 : Agent, agent2 : Agent) {
       agent.reward(1.0)
     }
     else if (otherPlayerWon(agent) == true) {
-      agent.reward(0.0)
+      //println(s"Giving reward to ${agent.name} because other player won.")
+      agent.reward(-1.0)
     }
     else if (isFullBoard(spaceOwners.getList()) == true) {
-      agent.reward(0.5)
+      agent.reward(0.0)
     }
     else {
-      agent.reward(0.0)
+      agent.reward(0.5)
     }
   }
 }
