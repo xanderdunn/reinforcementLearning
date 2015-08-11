@@ -270,8 +270,6 @@ class TicTacToeBoard() {
 
 /** The environment is responsible for transitioning state and giving reward. */
 class Environment() {
-  // TODO: Move this to the WorldPanel
-  val gridWidth = 30    // Width of each box in the grid
   val size = 3
   var spaceOwners = new TicTacToeBoard()  // Array of each space on the board with the corresponding agent name that is currently occupying the space.  0 if no one is occupying the space.
   
@@ -427,6 +425,7 @@ class Environment() {
 /** The 2D panel that's visible.  This class is responsible for all drawing. */
 class TicTacToePanel(gridWorld : TicTacToeWorld) extends JPanel {
   val worldOffset = 40  // So it's not in the very top left corner
+  val gridWidth = 30    // Width of each box in the grid
 
   def drawTicTacToeWorld(graphics : Graphics) {
     drawEnvironment(gridWorld.environment, graphics)
@@ -437,10 +436,10 @@ class TicTacToePanel(gridWorld : TicTacToeWorld) extends JPanel {
   def drawEnvironment(environment : Environment, graphics : Graphics) {
     val n = environment.size
     for (b <- 1 to n) { // Draw each row
-      var y = (b - 1) * environment.gridWidth + worldOffset
+      var y = (b - 1) * gridWidth + worldOffset
       for (a <- 1 to n) { // Draw a single row
-        var x = (a - 1) * environment.gridWidth + worldOffset
-        graphics.drawRect(x, y, environment.gridWidth, environment.gridWidth)
+        var x = (a - 1) * gridWidth + worldOffset
+        graphics.drawRect(x, y, gridWidth, gridWidth)
       }
     }
   }
@@ -456,8 +455,8 @@ class TicTacToePanel(gridWorld : TicTacToeWorld) extends JPanel {
         val py = environment.rowNumber(i)
         val px = environment.columnNumber(i)
         // TODO: Center these perfectly
-        val x = worldOffset + px*environment.gridWidth + environment.gridWidth/4
-        val y = worldOffset + py*environment.gridWidth + 23
+        val x = worldOffset + px*gridWidth + gridWidth/4
+        val y = worldOffset + py*gridWidth + 23
         val font = new Font("Dialog", Font.PLAIN, 22)
         graphics.setFont(font)
         graphics.asInstanceOf[Graphics2D].setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON)  // Enable anti-aliasing
