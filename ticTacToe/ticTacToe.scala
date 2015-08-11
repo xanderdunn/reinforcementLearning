@@ -269,6 +269,7 @@ class TicTacToeBoard() {
     if (previousMarkMove == newOwner) {
       throw new TwoMovesInARow(s"${newOwner} tried to make a move on the board, but it was the last player to make a move.  Can't make two moves in a row.")
     }
+    previousMarkMove = newOwner
     val existingOwner = spaceOwners(space - 1)
     if (existingOwner != "") {
       throw new CanNotMoveThereException(s"${newOwner} tried to place someone on space ${space}, but ${existingOwner} is already there.  Board = ${spaceOwners.mkString(", ")}")
