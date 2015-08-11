@@ -29,7 +29,7 @@ object NeuralNetUtilities {
     private val _outputNeuron = new Neuron(false)
     private val _hiddenNeurons : ArrayBuffer[Neuron] = ArrayBuffer()
     private val _inputNeurons : ArrayBuffer[Neuron] = ArrayBuffer()
-    private val learningRate = 0.9
+    private val learningRate = 0.1
 
     for (i <- 0 until numberInputNeurons) { // Create input neurons
       _inputNeurons += new Neuron(false)
