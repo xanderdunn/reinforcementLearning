@@ -29,9 +29,9 @@ object TicTacToeLearning {
     frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE)
     frame.setSize(180, 180)
 
-    val ticTacToeWorldTabular = new TicTacToeWorld(true)
-    val ticTacToeWorldNeuralNet = new TicTacToeWorld(false)
-    val worlds = Array(ticTacToeWorldTabular, ticTacToeWorldNeuralNet)
+    val ticTacToeWorldTabularRandom = new TicTacToeWorld(true, false, true)
+    val ticTacToeWorldNeuralNetRandom = new TicTacToeWorld(false, false, true)
+    val worlds = Array(ticTacToeWorldTabularRandom, ticTacToeWorldNeuralNetRandom)
     for (ticTacToeWorld <- worlds) {
       var trainSteps = 100000
       var testSteps = 100000
@@ -45,7 +45,7 @@ object TicTacToeLearning {
       }
       frame.setContentPane(ticTacToeWorld.ticTacToePanel)
       frame.setVisible(true)
-      val agent = ticTacToeWorld.agent
+      val agent = ticTacToeWorld.agent1
       val environment = ticTacToeWorld.environment
 
       println(s"Training ${trainSteps} games against a random player.")
@@ -68,7 +68,7 @@ object TicTacToeLearning {
 
   /** Take one step in the game: The player takes an action, the other player responds, and the board hands out reward. */
   def iterateGameStep(ticTacToeWorld : TicTacToeWorld, epsilon : Double, frame : JFrame) {
-    val agent = ticTacToeWorld.agent
+    val agent = ticTacToeWorld.agent1
     val environment = ticTacToeWorld.environment
     agent.chooseAction(epsilon)
     environment.applyAction(agent)
@@ -82,16 +82,18 @@ object TicTacToeLearning {
 
 
 /** A TicTacToeWorld contains an Agent and an Environment as well as the TicTacToePanel responsible for drawing the two on screen. */
-class TicTacToeWorld(_tabular : Boolean) {
+class TicTacToeWorld(_tabular : Boolean, agent1Random : Boolean, agent2Random : Boolean) {
   def tabular = _tabular
-  val agent = new Agent("X", _tabular)
+  val agent1 = new Agent("X", _tabular, agent1Random)
+  val agent2 = new Agent("O", _tabular, agent2Random)
+  val agents = List(agent1, agent2)
   val environment = new Environment()
   val ticTacToePanel = new TicTacToePanel(this)
 }
 
 
 /** The agent object who makes decisions on where to places X's and O's.  Because there are two players, players are identified by an integer value.*/
-class Agent(_name : String, _tabular : Boolean) {
+class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
   val name = _name
   private var _state : List[String] = List.fill(9){""}
   var previousState = List.fill(9){""}
@@ -107,6 +109,7 @@ class Agent(_name : String, _tabular : Boolean) {
   if (tabular == false) {
     neuralNet = Option(new NeuralNet(10, 26))
   }
+  def random = _random
 
   /** Convenience method for initializing values for a given state if not already initialized */
   def getStateValues(state : List[String]) : Map[Int, Double] = { 
