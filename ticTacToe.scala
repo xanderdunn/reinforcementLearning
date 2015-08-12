@@ -337,7 +337,7 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
         // Make sure they're initialized
         getStateValues(previousState)
         getStateValues(state)
-        val updateValue = (0.1)*((reward + stateValues(state).maxBy(_._2)._2) - stateValues(previousState)(newlyOccupiedSpace)) // Q-Learning
+        val updateValue = (Parameters.tabularAlpha)*((reward + stateValues(state).maxBy(_._2)._2) - stateValues(previousState)(newlyOccupiedSpace)) // Q-Learning
         stateValues(previousState)(newlyOccupiedSpace) += updateValue
       }
       else {
