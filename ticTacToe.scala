@@ -94,9 +94,9 @@ object TicTacToeLearning {
 
   object PlotGenerator {
     def generateLearningCurves() {
-      val settings = List(/*(25000, 300, true, false, true, 0.1, s"Tabular Learner vs. Random Agent, epsilon=${Parameters.epsilon}  alpha=${Parameters.tabularAlpha}", "tabular_randomStart.pdf"),*/
-                      /*(100000, 200, false, false, true, 0.1, s"Neural Net vs. Random Agent, epsilon=${Parameters.epsilon} alpha=${Parameters.neuralAlpha} gamma=0.2", "neural_randomStart.pdf"),*/ 
-                      (100000, 20, false, false, true, 0.1, s"Neural Net vs. Random Agent, epsilon=${Parameters.epsilon} alpha=${Parameters.neuralNetAlpha} gamma=${Parameters.neuralGamma}", "neural_vs_neural.pdf"))
+      val settings = List(/*(25000, 300, true, false, true, s"Tabular Learner vs. Random Agent, epsilon=${Parameters.epsilon}  alpha=${Parameters.tabularAlpha}", "tabular_randomStart.pdf"),*/
+                      /*(100000, 200, false, false, true, s"Neural Net vs. Random Agent, epsilon=${Parameters.epsilon} alpha=${Parameters.neuralAlpha} gamma=0.2", "neural_randomStart.pdf"),*/ 
+                      (100000, 20, false, false, true, s"Neural Net vs. Random Agent, epsilon=${Parameters.epsilon} alpha=${Parameters.neuralNetAlpha} gamma=${Parameters.neuralGamma}", "neural_vs_neural.pdf"))
 
       for (setting <- settings) {
         val numberEpisodes = setting._1
@@ -104,8 +104,8 @@ object TicTacToeLearning {
         val tabular = setting._3
         val playerXRandom = setting._4
         val playerORandom = setting._5
-        val title = setting._7
-        val filename = setting._8
+        val title = setting._6
+        val filename = setting._7
 
         var i = 0
         val episodeNumbers : Seq[Double] = Seq.fill(numberEpisodes){0.0}
