@@ -56,7 +56,7 @@ object TicTacToeLearning {
         println("=== Neural Network Q Learning:")
       }
       frame.setContentPane(ticTacToeWorld.ticTacToePanel)
-      frame.setVisible(true)
+      //frame.setVisible(true)
       val environment = ticTacToeWorld.environment
 
       println(s"Training ${trainSteps} episodes.")
@@ -66,7 +66,7 @@ object TicTacToeLearning {
       environment.resetGameStats()
       println(s"Testing the trained Q-Learner against ${testSteps} games.  Exploration is disabled.")
       while (environment.totalGames < testSteps) {
-        iterateGameStep(ticTacToeWorld, 0.0, Option(frame), "")
+        iterateGameStep(ticTacToeWorld, 0.0, None, "")
       }
       println(s"Player X won ${environment.xWins / environment.totalGames * 100}% of ${testSteps} test games.")
       println(s"Player O won ${environment.oWins} of the ${testSteps} test games.")
