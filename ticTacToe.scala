@@ -28,10 +28,10 @@ import debug.DebugUtilities._
 object Parameters {
   // Tabular Parameters
   val tabularAlpha = 0.1
-  val tabularNumberTrainEpisodes = 100000
+  val tabularNumberTrainEpisodes = 20000
   // Both
   val epsilon = 0.1
-  val numberTestEpisodes = 100000
+  val numberTestEpisodes = 20000
   // Neural Net Parameters
   val neuralNumberTrainEpisodes = 100000
   val neuralValueLearningAlpha = 0.1 // The learning rate used by the value update function
