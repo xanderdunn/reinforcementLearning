@@ -155,7 +155,6 @@ object TicTacToeLearning {
       stats(episodeCounter) = playEpisode(ticTacToeWorld, epsilon, "X")
       episodeCounter += 1
     }
-    println(s"Had ${ticTacToeWorld.environment.xWins} wins")
    return stats
   }
 
