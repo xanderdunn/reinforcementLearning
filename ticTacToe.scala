@@ -16,12 +16,14 @@ import javax.swing.JPanel
 import scala.math
 import scala.util.Random._
 import scala.collection.mutable._
+// Third Party, for Plotting
 import breeze.linalg._
 import breeze.plot._
 // Custom
 import neuralNet._
 import neuralNet.NeuralNetUtilities._
 import EnvironmentUtilities._
+import debug.DebugUtilities._
 
 
 object TicTacToeLearning {
@@ -202,7 +204,7 @@ class TicTacToeWorld(_tabular : Boolean, agent1Random : Boolean, agent2Random : 
     currentPlayer = environment.getOtherAgent(currentPlayer)
     //currentPlayer = agent1
     firstPlayer = currentPlayer
-    //println(s"firstPlayer = ${firstPlayer.name}")
+    debugPrint(s"firstPlayer = ${firstPlayer.name}")
     environment.spaceOwners.resetBoard()
     agent1.previousState = List.fill(9){""}
     agent1.state = List.fill(9){""}
@@ -319,7 +321,7 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
   /** The environment calls this to reward the agent for its action. */
   def reward(reward : Double) {
     if (movedOnce == true && random == false) {
-      //println(s"Give reward ${reward} to ${name} moving from ${previousState} to ${state}")
+      debugPrint(s"Give reward ${reward} to ${name} moving from ${previousState} to ${state}")
       if (tabular) {
         // Make sure they're initialized
         getStateValues(previousState)
@@ -541,9 +543,11 @@ class Environment(agent1 : Agent, agent2 : Agent) {
     totalGames += 1
     if (xWon() == true) {
       xWins += 1
+      debugPrint("X WON!")
     }
     else if (oWon() == true) {
       oWins += 1
+      debugPrint("O WON!")
     }
     else if (isFullBoard(spaceOwners.getList())) {
       stalemates += 1
