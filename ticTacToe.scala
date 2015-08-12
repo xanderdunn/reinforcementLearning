@@ -29,15 +29,11 @@ object TicTacToeLearning {
   /** Executed to initiate playing Tic-tac-toe with Q-Learning. */
   def main(args: Array[String]) {
 
-    val f = Figure()
-    val p = f.subplot(0)
-    val x = linspace(0.0,1.0)
-    p += plot(x, x :^ 2.0)
-    p += plot(x, x :^ 3.0, '.')
-    p.xlabel = "x axis"
-    p.ylabel = "y axis"
-    f.saveas("lines.png")
-
+    if (false) {
+      PlotGenerator.generateLearningCurves()
+      System.exit(0)
+    }
+    
     val frame = new JFrame("Tic Tac Toe")
     frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE)
     frame.setSize(180, 180)
@@ -64,36 +60,125 @@ object TicTacToeLearning {
 
       println(s"Training ${trainSteps} games against a random player.")
       while (environment.totalGames < trainSteps) { // Train for ${trainSteps} games
-        iterateGameStep(ticTacToeWorld, 10.0, frame)
+        iterateGameStep(ticTacToeWorld, 10.0, Option(frame), "")
       }
       environment.resetGameStats()
       println(s"Testing the trained Q-Learner against ${testSteps} games.  Exploration is disabled.")
       while (environment.totalGames < testSteps) {
-        iterateGameStep(ticTacToeWorld, 0.0, frame)
+        iterateGameStep(ticTacToeWorld, 0.0, Option(frame), "")
       }
       println(s"The Q-Learner won ${environment.xWins / environment.totalGames * 100}% of ${testSteps} test games against a random player.")
       println(s"The random player won ${environment.oWins} of the ${testSteps} test games.")
       println(s"${environment.stalemates} of the ${testSteps} test games were stalemates.")
       println("")
+
+      System.exit(0)
     }
 
-    System.exit(0)
+  }
+
+  object PlotGenerator {
+    def generateLearningCurves() {
+      val settings = List((true, false, true, 0.1, s"Tabular Learner vs. Random Agent, epsilon=0.1  alpha=0.1", "1.pdf")/*,
+                      (new TicTacToeWorld(false, false, true), 0.1, s"Neural Net vs. Random Agent, ɛ=0.1 α=0.1", "2.pdf")*/)
+
+      for (setting <- settings) {
+        val tabular = setting._1
+        val playerXRandom = setting._2
+        val playerORandom = setting._3
+        val epsilon = setting._4
+        val title = setting._5
+        val filename = setting._6
+
+        val numberEpisodes = 6000
+        var i = 0
+        val episodeNumbers : Seq[Double] = Seq.fill(numberEpisodes){0.0}
+        while (i < numberEpisodes) {
+          episodeNumbers(i) = i.toDouble + 1.0
+          i += 1
+        }
+        var iteration = 0
+        val numberIterations = 500.0
+        val finalResults : Seq[Double] = Seq.fill(numberEpisodes){0.0}
+        while (iteration < numberIterations) {
+          println(s"Iteration ${iteration}/${numberIterations}")
+          val results = playTrainingSession(numberEpisodes, tabular, playerXRandom, playerORandom, epsilon)
+          var i = 0
+          for (result <- results) {
+            finalResults(i) = finalResults(i) + result
+            i += 1
+          }
+          iteration += 1
+        }
+
+        i = 0
+        for (result <- finalResults) {
+          finalResults(i) = finalResults(i) / numberIterations * 100.0
+          i += 1
+        }
+        println(s"finalResuls = ${finalResults.mkString(", ")}")
+        println(s"${episodeNumbers}")
+
+        val f = Figure()
+        val p = f.subplot(0)
+        p += plot(episodeNumbers, finalResults, '.')
+        p.xlabel = "Episodes"
+        p.ylabel = s"% wins out of ${numberIterations.toInt} iterations"
+        p.title = title
+        f.saveas(filename)
+      }
+    }
+
+  }
+
+  def playTrainingSession(numberEpisodes : Int, tabular : Boolean, playerXRandom : Boolean, playerORandom : Boolean, epsilon : Double) : Seq[Double] = { // Play an entire set of games of training
+    println(s"Playing a training session with ${numberEpisodes} episodes")
+    val stats : IndexedSeq[Double] = IndexedSeq.fill(numberEpisodes){0.0}
+    var episodeCounter = 0
+    val ticTacToeWorld = new TicTacToeWorld(tabular, playerXRandom, playerORandom)
+    while (episodeCounter < numberEpisodes) {
+      stats(episodeCounter) = playEpisode(ticTacToeWorld, epsilon, "X")
+      episodeCounter += 1
+    }
+    println(s"Had ${ticTacToeWorld.environment.xWins} wins")
+   return stats
+  }
+
+  def playEpisode(ticTacToeWorld : TicTacToeWorld, epsilon : Double, collectingDataFor : String) : Double = {
+    var episodeOutcome = -2.0
+    while (episodeOutcome == -2.0) {
+      episodeOutcome = iterateGameStep(ticTacToeWorld, epsilon, None, collectingDataFor)
+    }
+    return episodeOutcome
   }
 
   /** Take one step in the game: The player takes an action, the other player responds, and the board hands out reward. */
-  def iterateGameStep(ticTacToeWorld : TicTacToeWorld, epsilon : Double, frame : JFrame) {
+  def iterateGameStep(ticTacToeWorld : TicTacToeWorld, epsilon : Double, frame : Option[JFrame], collectingDataFor : String) : Double = {  // If you're collecting data, pass in the string "X" or "O" for the player whose data you're interested in.  This method returns 1 if that player won this episode, -1 if it lost, 0 if it was a stalemate, and -2 if the episode hasn't ended.
     val agent = ticTacToeWorld.currentPlayer
     val environment = ticTacToeWorld.environment
     agent.chooseAction(epsilon, environment.spaceOwners.getList())
     environment.applyAction(agent, ticTacToeWorld.firstPlayer)
+    var returnValue = -2.0
     if (environment.isEndState()) {
+      if (environment.playerWon(ticTacToeWorld.agent1) == true) {
+        returnValue = 1.0
+      }
+      else if (environment.playerWon(environment.getOtherAgent(ticTacToeWorld.agent1))) {
+        returnValue = 0.0
+      }
+      else {
+        returnValue = 0.0
+      }
       environment.countEndState()
       ticTacToeWorld.endEpisode()
     }
     else {
       ticTacToeWorld.currentPlayer = environment.getOtherAgent(ticTacToeWorld.currentPlayer)
     }
-    frame.repaint()
+    if (frame != None) {
+      frame.get.repaint()
+    }
+    return returnValue
     // TODO: Show some text on the tic tac toe board when a certain player wins
     // TODO: Fix the timing such that the end state is visible to the user for a moment.
     //Thread.sleep(500)
