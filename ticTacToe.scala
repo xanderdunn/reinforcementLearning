@@ -17,6 +17,8 @@ import javax.swing.JPanel
 import scala.math
 import scala.util.Random._
 import scala.collection.mutable._
+import breeze.linalg._
+import breeze.plot._
 // Custom
 import neuralNet._
 import neuralNet.NeuralNetUtilities._
@@ -26,6 +28,16 @@ import EnvironmentUtilities._
 object TicTacToeLearning {
   /** Executed to initiate playing Tic-tac-toe with Q-Learning. */
   def main(args: Array[String]) {
+
+    val f = Figure()
+    val p = f.subplot(0)
+    val x = linspace(0.0,1.0)
+    p += plot(x, x :^ 2.0)
+    p += plot(x, x :^ 3.0, '.')
+    p.xlabel = "x axis"
+    p.ylabel = "y axis"
+    f.saveas("lines.png")
+
     val frame = new JFrame("Tic Tac Toe")
     frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE)
     frame.setSize(180, 180)
@@ -34,7 +46,7 @@ object TicTacToeLearning {
     val ticTacToeWorldNeuralNetBothRandom = new TicTacToeWorld(false, true, true)
     val ticTacToeWorldTabularRandom = new TicTacToeWorld(true, false, true)
     val ticTacToeWorldNeuralNetRandom = new TicTacToeWorld(false, false, true)
-    val worlds = Array(/*ticTacToeWorldTabularBothRandom, ticTacToeWorldNeuralNetBothRandom,*/ ticTacToeWorldTabularRandom/*, ticTacToeWorldNeuralNetRandom*/)
+    val worlds = Array(/*ticTacToeWorldTabularBothRandom, ticTacToeWorldNeuralNetBothRandom,*/ ticTacToeWorldTabularRandom, ticTacToeWorldNeuralNetRandom)
     for (ticTacToeWorld <- worlds) {
       var trainSteps = 100000
       var testSteps = 100000
@@ -104,8 +116,9 @@ class TicTacToeWorld(_tabular : Boolean, agent1Random : Boolean, agent2Random : 
     /** Reset the agent and states for a new episode */
   def endEpisode() {
     currentPlayer = environment.getOtherAgent(currentPlayer)
+    //currentPlayer = agent1
     firstPlayer = currentPlayer
-    println(s"firstPlayer = ${firstPlayer.name}")
+    //println(s"firstPlayer = ${firstPlayer.name}")
     environment.spaceOwners.resetBoard()
     agent1.previousState = List.fill(9){""}
     agent1.state = List.fill(9){""}
@@ -222,7 +235,7 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
         // Make sure they're initialized
         getStateValues(previousState)
         getStateValues(state)
-        val updateValue = (0.70)*((reward + stateValues(state).maxBy(_._2)._2) - stateValues(previousState)(newlyOccupiedSpace)) // Q-Learning
+        val updateValue = (0.1)*((reward + stateValues(state).maxBy(_._2)._2) - stateValues(previousState)(newlyOccupiedSpace)) // Q-Learning
         stateValues(previousState)(newlyOccupiedSpace) += updateValue
       }
       else {
@@ -426,7 +439,6 @@ class Environment(agent1 : Agent, agent2 : Agent) {
   def applyAction(agent : Agent, firstPlayer : Agent) {
     giveReward(agent) // For this agent's previous move that wasn't rewarded yet because the subsequent player's move could have put it into an end state
     spaceOwners.setSpaceOwner(agent.newlyOccupiedSpace, agent.name) // Take the space chosen by the agent
-    //println(s"${agent.name} took space ${agent.newlyOccupiedSpace}")
     val otherPlayer = getOtherAgent(agent)
     if (isEndState() == true) {
       giveReward(agent)
@@ -459,7 +471,6 @@ class Environment(agent1 : Agent, agent2 : Agent) {
       agent.reward(1.0)
     }
     else if (otherPlayerWon(agent) == true) {
-      //println(s"Giving reward to ${agent.name} because other player won.")
       agent.reward(-1.0)
     }
     else if (isFullBoard(spaceOwners.getList()) == true) {
