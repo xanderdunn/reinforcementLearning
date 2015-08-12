@@ -80,7 +80,7 @@ object TicTacToeLearning {
       }
       environment.resetGameStats()
       println(s"Testing the trained Q-Learner against ${numberTrainEpisodes} games.  Exploration is disabled.")
-      while (environment.totalGames < numberTrainEpisodes) {
+      while (environment.totalGames < numberTestEpisodes) {
         playEpisode(ticTacToeWorld, 0.0, "")
       }
       println(s"Player X won ${environment.xWins / environment.totalGames * 100}% of ${numberTestEpisodes} test games.")
