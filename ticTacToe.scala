@@ -72,9 +72,8 @@ object TicTacToeLearning {
       println(s"${environment.stalemates} of the ${testSteps} test games were stalemates.")
       println("")
 
-      System.exit(0)
     }
-
+      System.exit(0)
   }
 
   object PlotGenerator {
