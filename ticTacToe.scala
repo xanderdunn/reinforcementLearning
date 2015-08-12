@@ -41,7 +41,9 @@ object TicTacToeLearning {
     val ticTacToeWorldNeuralNetBothRandom = new TicTacToeWorld(false, true, true)
     val ticTacToeWorldTabularRandom = new TicTacToeWorld(true, false, true)
     val ticTacToeWorldNeuralNetRandom = new TicTacToeWorld(false, false, true)
-    val worlds = Array(/*ticTacToeWorldTabularBothRandom, ticTacToeWorldNeuralNetBothRandom,*/ ticTacToeWorldTabularRandom, ticTacToeWorldNeuralNetRandom)
+    val ticTacToeWorldTabularTabular = new TicTacToeWorld(true, false, false)
+    val ticTacToeWorldNeuralNetNeuralNet = new TicTacToeWorld(false, false, false)
+    val worlds = Array(/*ticTacToeWorldTabularBothRandom, ticTacToeWorldNeuralNetBothRandom, ticTacToeWorldTabularRandom, ticTacToeWorldNeuralNetRandom, ticTacToeWorldTabularTabular,*/ ticTacToeWorldNeuralNetNeuralNet)
     for (ticTacToeWorld <- worlds) {
       var trainSteps = 100000
       var testSteps = 100000
