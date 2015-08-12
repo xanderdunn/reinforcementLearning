@@ -561,7 +561,7 @@ class Environment(agent1 : Agent, agent2 : Agent) {
       agent.reward(0.0)
     }
     else {
-      agent.reward(0.5)
+      agent.reward(0.0)
     }
   }
 }
