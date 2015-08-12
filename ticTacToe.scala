@@ -272,8 +272,13 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
     return (maxValue, greedyAction)
   }
 
+  case class AskingForActionOnFullBoard(message: String) extends Exception(message)
+
   /** The agent chooses the next action to take. */
   def chooseAction(exploreEpsilon : Double, boardState : List[String]) {
+    if (emptySpaces(boardState).size == 0) {
+      throw new AskingForActionOnFullBoard("The agent was asked to choose an action but there are no empty spaces.  That makes no sense.")
+    }
     if (_random) {
       val prospectiveSpaces = emptySpaces(boardState)
       newlyOccupiedSpace = prospectiveSpaces(nextInt(prospectiveSpaces.size))
