@@ -25,6 +25,8 @@ import neuralNet.NeuralNetUtilities._
 import EnvironmentUtilities._
 import debug.DebugUtilities._
 
+case class InvalidParameter(message: String) extends Exception(message)
+
 object Parameters {
   // Tabular Parameters
   val tabularAlpha = 0.1
@@ -286,7 +288,10 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
   case class AskingForActionOnFullBoard(message: String) extends Exception(message)
 
   /** The agent chooses the next action to take. */
-  def chooseAction(exploreEpsilon : Double, boardState : List[String]) {
+  def chooseAction(epsilon : Double, boardState : List[String]) {
+    if (epsilon < 0.0 || epsilon > 1.0) {
+      throw new InvalidParameter(s"epsilon = ${epsilon} was passed in, but it only makes sense if it's greater than 0.0 and less than 1.0.")
+    }
     if (emptySpaces(boardState).size == 0) {
       throw new AskingForActionOnFullBoard("The agent was asked to choose an action but there are no empty spaces.  That makes no sense.")
     }
@@ -296,7 +301,7 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
     }
     else {
       val randomHundred = nextInt(100)
-      if (randomHundred <= (100 - exploreEpsilon - 1)) { // Exploit: Choose the greedy action and break ties randomly
+      if (randomHundred <= (100 - (epsilon * 100.0) - 1)) { // Exploit: Choose the greedy action and break ties randomly
         if (tabular == true) {
           newlyOccupiedSpace = tabularGreedyAction(boardState)
         }
