@@ -79,18 +79,19 @@ object TicTacToeLearning {
 
   object PlotGenerator {
     def generateLearningCurves() {
-      val settings = List((true, false, true, 0.1, s"Tabular Learner vs. Random Agent, epsilon=0.1  alpha=0.1", "1.pdf")/*,
-                      (new TicTacToeWorld(false, false, true), 0.1, s"Neural Net vs. Random Agent, ɛ=0.1 α=0.1", "2.pdf")*/)
+      val settings = List(/*(6000, 500, true, false, true, 0.1, s"Tabular Learner vs. Random Agent, epsilon=0.1  alpha=0.1", "1.pdf"),*/
+                      (100000, 400, false, false, true, 0.1, s"Neural Net vs. Random Agent, epsilon=0.1 alpha=0.1", "neural_alwaysStart.pdf"))
 
       for (setting <- settings) {
-        val tabular = setting._1
-        val playerXRandom = setting._2
-        val playerORandom = setting._3
-        val epsilon = setting._4
-        val title = setting._5
-        val filename = setting._6
+        val numberEpisodes = setting._1
+        val numberIterations = setting._2
+        val tabular = setting._3
+        val playerXRandom = setting._4
+        val playerORandom = setting._5
+        val epsilon = setting._6
+        val title = setting._7
+        val filename = setting._8
 
-        val numberEpisodes = 6000
         var i = 0
         val episodeNumbers : Seq[Double] = Seq.fill(numberEpisodes){0.0}
         while (i < numberEpisodes) {
@@ -98,7 +99,6 @@ object TicTacToeLearning {
           i += 1
         }
         var iteration = 0
-        val numberIterations = 500.0
         val finalResults : Seq[Double] = Seq.fill(numberEpisodes){0.0}
         while (iteration < numberIterations) {
           println(s"Iteration ${iteration}/${numberIterations}")
