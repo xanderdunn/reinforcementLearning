@@ -70,7 +70,7 @@ object TicTacToeLearning {
       }
       else {
         numberTrainEpisodes = Parameters.neuralNumberTrainEpisodes
-        println(s"=== Neural Network Q Learning epsilon=${Parameters.epsilon} alpha=${Parameters.neuralValueLearningAlpha} gamma=${Parameters.neuralGamma}")
+        println(s"=== Neural Network Q Learning epsilon=${Parameters.epsilon} learningAlpha=${Parameters.neuralValueLearningAlpha} netAlpha=${Parameters.neuralNetAlpha} gamma=${Parameters.neuralGamma}")
       }
       frame.setContentPane(ticTacToeWorld.ticTacToePanel)
       //frame.setVisible(true)
@@ -98,7 +98,7 @@ object TicTacToeLearning {
     def generateLearningCurves() {
       val settings = List(/*(25000, 300, true, false, true, s"Tabular Learner vs. Random Agent, epsilon=${Parameters.epsilon}  alpha=${Parameters.tabularAlpha}", "tabular_randomStart.pdf"),*/
                       /*(100000, 200, false, false, true, s"Neural Net vs. Random Agent, epsilon=${Parameters.epsilon} alpha=${Parameters.neuralAlpha} gamma=0.2", "neural_randomStart.pdf"),*/ 
-                      (100000, 20, false, false, true, s"Neural Net vs. Random Agent, epsilon=${Parameters.epsilon} alpha=${Parameters.neuralNetAlpha} gamma=${Parameters.neuralGamma}", "neural_vs_neural.pdf"))
+                      (100000, 20, false, false, true, s"Neural Net vs. Random Agent, epsilon=${Parameters.epsilon} learningAlpha=${Parameters.neuralValueLearningAlpha} netAlpha=${Parameters.neuralNetAlpha} gamma=${Parameters.neuralGamma}", "neural_vs_neural.pdf"))
 
       for (setting <- settings) {
         val numberEpisodes = setting._1
