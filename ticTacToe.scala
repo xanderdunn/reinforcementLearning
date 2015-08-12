@@ -79,8 +79,9 @@ object TicTacToeLearning {
 
   object PlotGenerator {
     def generateLearningCurves() {
-      val settings = List(/*(6000, 500, true, false, true, 0.1, s"Tabular Learner vs. Random Agent, epsilon=0.1  alpha=0.1", "1.pdf"),*/
-                      (100000, 400, false, false, true, 0.1, s"Neural Net vs. Random Agent, epsilon=0.1 alpha=0.1", "neural_alwaysStart.pdf"))
+      val settings = List(/*(25000, 300, true, false, true, 0.1, s"Tabular Learner vs. Random Agent, epsilon=0.1  alpha=0.5", "tabular_randomStart.pdf"),*/
+                      /*(100000, 200, false, false, true, 0.1, s"Neural Net vs. Random Agent, epsilon=0.1 alpha=0.2 gamma=0.2", "neural_randomStart.pdf"),*/ 
+                      (100000, 20, false, false, true, 0.1, s"Neural Net vs. Random Agent, epsilon=0.1 alpha=0.01 gamma=1.0", "neural_vs_neural.pdf"))
 
       for (setting <- settings) {
         val numberEpisodes = setting._1
