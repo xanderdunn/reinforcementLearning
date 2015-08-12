@@ -25,6 +25,20 @@ import neuralNet.NeuralNetUtilities._
 import EnvironmentUtilities._
 import debug.DebugUtilities._
 
+object Parameters {
+  // Tabular Parameters
+  val tabularAlpha = 0.1
+  val tabularNumberTrainEpisodes = 100000
+  // Both
+  val epsilon = 0.1
+  val numberTestEpisodes = 100000
+  // Neural Net Parameters
+  val neuralNumberTrainEpisodes = 100000
+  val neuralValueLearningAlpha = 0.1 // The learning rate used by the value update function
+  val neuralNetAlpha = 0.1           // The learning rate in the neural net itself
+  val neuralGamma = 0.99 // discount rate
+  val neuralInitialBias = 0.15  // This is in the range [0, f(n)] where n is the number of input neurons and f(x) = 1/sqrt(n).   See here: http://neuralnetworksanddeeplearning.com/chap3.html#weight_initialization
+}
 
 object TicTacToeLearning {
   /** Executed to initiate playing Tic-tac-toe with Q-Learning. */
@@ -45,34 +59,33 @@ object TicTacToeLearning {
     val ticTacToeWorldNeuralNetRandom = new TicTacToeWorld(false, false, true)
     val ticTacToeWorldTabularTabular = new TicTacToeWorld(true, false, false)
     val ticTacToeWorldNeuralNetNeuralNet = new TicTacToeWorld(false, false, false)
-    val worlds = Array(/*ticTacToeWorldTabularBothRandom, ticTacToeWorldNeuralNetBothRandom, ticTacToeWorldTabularRandom, ticTacToeWorldNeuralNetRandom, ticTacToeWorldTabularTabular,*/ ticTacToeWorldNeuralNetNeuralNet)
+    val worlds = Array(ticTacToeWorldTabularBothRandom, ticTacToeWorldNeuralNetBothRandom, ticTacToeWorldTabularRandom, ticTacToeWorldNeuralNetRandom, ticTacToeWorldTabularTabular, ticTacToeWorldNeuralNetNeuralNet)
     for (ticTacToeWorld <- worlds) {
-      var trainSteps = 100000
-      var testSteps = 100000
+      var numberTrainEpisodes = Parameters.tabularNumberTrainEpisodes
+      val numberTestEpisodes = Parameters.numberTestEpisodes
       if (ticTacToeWorld.tabular == true) {
-        println("=== Tabular Q Learning:")
+        println(s"=== Tabular Q Learning epsilon=${Parameters.epsilon} alpha=${Parameters.tabularAlpha}")
       }
       else {
-        trainSteps = 200000
-        testSteps = 100000
-        println("=== Neural Network Q Learning:")
+        numberTrainEpisodes = Parameters.neuralNumberTrainEpisodes
+        println(s"=== Neural Network Q Learning epsilon=${Parameters.epsilon} alpha=${Parameters.neuralValueLearningAlpha} gamma=${Parameters.neuralGamma}")
       }
       frame.setContentPane(ticTacToeWorld.ticTacToePanel)
       //frame.setVisible(true)
       val environment = ticTacToeWorld.environment
 
-      println(s"Training ${trainSteps} episodes.")
-      while (environment.totalGames < trainSteps) { // Train for ${trainSteps} games
-        iterateGameStep(ticTacToeWorld, 10.0, None, "")
+      println(s"Training ${numberTrainEpisodes} episodes.")
+      while (environment.totalGames < numberTrainEpisodes) {
+        iterateGameStep(ticTacToeWorld, Parameters.epsilon * 100.0, None, "") // TODO: Use playEpisode instead of iterateGameStep
       }
       environment.resetGameStats()
-      println(s"Testing the trained Q-Learner against ${testSteps} games.  Exploration is disabled.")
-      while (environment.totalGames < testSteps) {
+      println(s"Testing the trained Q-Learner against ${numberTrainEpisodes} games.  Exploration is disabled.")
+      while (environment.totalGames < numberTrainEpisodes) {
         iterateGameStep(ticTacToeWorld, 0.0, None, "")
       }
-      println(s"Player X won ${environment.xWins / environment.totalGames * 100}% of ${testSteps} test games.")
-      println(s"Player O won ${environment.oWins} of the ${testSteps} test games.")
-      println(s"${environment.stalemates} of the ${testSteps} test games were stalemates.")
+      println(s"Player X won ${environment.xWins / environment.totalGames * 100}% of ${numberTestEpisodes} test games.")
+      println(s"Player O won ${environment.oWins} of the ${numberTestEpisodes} test games.")
+      println(s"${environment.stalemates} of the ${numberTestEpisodes} test games were stalemates.")
       println("")
 
     }
@@ -81,9 +94,9 @@ object TicTacToeLearning {
 
   object PlotGenerator {
     def generateLearningCurves() {
-      val settings = List(/*(25000, 300, true, false, true, 0.1, s"Tabular Learner vs. Random Agent, epsilon=0.1  alpha=0.5", "tabular_randomStart.pdf"),*/
-                      /*(100000, 200, false, false, true, 0.1, s"Neural Net vs. Random Agent, epsilon=0.1 alpha=0.2 gamma=0.2", "neural_randomStart.pdf"),*/ 
-                      (100000, 20, false, false, true, 0.1, s"Neural Net vs. Random Agent, epsilon=0.1 alpha=0.01 gamma=1.0", "neural_vs_neural.pdf"))
+      val settings = List(/*(25000, 300, true, false, true, 0.1, s"Tabular Learner vs. Random Agent, epsilon=${Parameters.epsilon}  alpha=${Parameters.tabularAlpha}", "tabular_randomStart.pdf"),*/
+                      /*(100000, 200, false, false, true, 0.1, s"Neural Net vs. Random Agent, epsilon=${Parameters.epsilon} alpha=${Parameters.neuralAlpha} gamma=0.2", "neural_randomStart.pdf"),*/ 
+                      (100000, 20, false, false, true, 0.1, s"Neural Net vs. Random Agent, epsilon=${Parameters.epsilon} alpha=${Parameters.neuralNetAlpha} gamma=${Parameters.neuralGamma}", "neural_vs_neural.pdf"))
 
       for (setting <- settings) {
         val numberEpisodes = setting._1
@@ -91,7 +104,6 @@ object TicTacToeLearning {
         val tabular = setting._3
         val playerXRandom = setting._4
         val playerORandom = setting._5
-        val epsilon = setting._6
         val title = setting._7
         val filename = setting._8
 
@@ -105,7 +117,7 @@ object TicTacToeLearning {
         val finalResults : Seq[Double] = Seq.fill(numberEpisodes){0.0}
         while (iteration < numberIterations) {
           println(s"Iteration ${iteration}/${numberIterations}")
-          val results = playTrainingSession(numberEpisodes, tabular, playerXRandom, playerORandom, epsilon)
+          val results = playTrainingSession(numberEpisodes, tabular, playerXRandom, playerORandom, Parameters.epsilon)
           var i = 0
           for (result <- results) {
             finalResults(i) = finalResults(i) + result
@@ -201,8 +213,8 @@ class TicTacToeWorld(_tabular : Boolean, agent1Random : Boolean, agent2Random : 
 
     /** Reset the agent and states for a new episode */
   def endEpisode() {
-    currentPlayer = environment.getOtherAgent(currentPlayer)
-    //currentPlayer = agent1
+    //currentPlayer = environment.getOtherAgent(currentPlayer)
+    currentPlayer = agent1
     firstPlayer = currentPlayer
     debugPrint(s"firstPlayer = ${firstPlayer.name}")
     environment.spaceOwners.resetBoard()
@@ -230,7 +242,7 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
   var newlyOccupiedSpace = 0
   val stateValues = Map[List[String], Map[Int, Double]]()  // The state-value function is stored in a map with keys that are environment states of the Tic-tac-toe board and values that are arrays of the value of each possible action in this state.  A possible action is any space that is not currently occupied.  
   def tabular = _tabular
-  val neuralNet = new NeuralNet(10, 26)
+  val neuralNet = new NeuralNet(10, 26, Parameters.neuralNetAlpha, Parameters.neuralInitialBias)
   def random = _random
   var movedOnce = false // To know not to update the value function before its first action
 
@@ -333,9 +345,7 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
         val previousStateFeatureVector = neuralNetFeatureVectorForStateAction(previousState, newlyOccupiedSpace)
         val previousStateValue = neuralNet.feedForward(previousStateFeatureVector)
         val stateMaxValue = maxNeuralNetValueAndActionForState(state)._1
-        val discountRate = 0.2
-        val learningRate = 0.2 
-        val targetValue = previousStateValue + learningRate * (reward + discountRate * stateMaxValue - previousStateValue)  // q(s,a) + learningrate * (reward + discountRate * q'(s,a) - q(s,a))
+        val targetValue = previousStateValue + Parameters.neuralValueLearningAlpha * (reward + Parameters.neuralGamma * stateMaxValue - previousStateValue)  // q(s,a) + learningrate * (reward + discountRate * q'(s,a) - q(s,a))
         neuralNet.train(previousStateFeatureVector, targetValue)
       }
     }

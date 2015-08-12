@@ -25,23 +25,22 @@ object NeuralNetUtilities {
 }
 
   /** A simple neural network with a single input neuron and a single output neuron and a given number of hidden neurons. */
-  class NeuralNet(numberInputNeurons : Int , numberHiddenNeurons : Int) {
-    private val _outputNeuron = new Neuron(false)
+  class NeuralNet(numberInputNeurons : Int , numberHiddenNeurons : Int, learningRate : Double, initialBias : Double) {
+    private val _outputNeuron = new Neuron(false, initialBias)
     private val _hiddenNeurons : ArrayBuffer[Neuron] = ArrayBuffer()
     private val _inputNeurons : ArrayBuffer[Neuron] = ArrayBuffer()
-    private val learningRate = 0.1
 
     for (i <- 0 until numberInputNeurons) { // Create input neurons
-      _inputNeurons += new Neuron(false)
+      _inputNeurons += new Neuron(false, initialBias)
     }
 
     for (i <- 0 until numberHiddenNeurons) { // Create hidden neurons
-      _hiddenNeurons += new Neuron(false)
+      _hiddenNeurons += new Neuron(false, initialBias)
     }
 
     // Create bias neurons
-    _inputNeurons += new Neuron(true)
-    _hiddenNeurons += new Neuron(true)
+    _inputNeurons += new Neuron(true, initialBias)
+    _hiddenNeurons += new Neuron(true, initialBias)
 
     for (inputNeuron <- _inputNeurons) {
       for (hiddenNeuron <- _hiddenNeurons) {
@@ -119,13 +118,13 @@ object NeuralNetUtilities {
 
 
   /** A single neuron in the network, responsible for calculating values */
-  class Neuron(_isBiasNeuon : Boolean) {
+  class Neuron(_isBiasNeuon : Boolean, initialBias : Double) {
     private var _sum = 0.0
     var connections : ArrayBuffer[Connection] = ArrayBuffer()
     var input = 0.0
     def isBiasNeuron = _isBiasNeuon
     if (isBiasNeuron) {
-      _sum = 0.15 // This is in the range [0, f(n)] where n is the number of input neurons and f(x) = 1/sqrt(n).   See here: http://neuralnetworksanddeeplearning.com/chap3.html#weight_initialization
+      _sum = initialBias
     }
     
     /* This is called externally when something has changed so that this neuron's value needs to be updated. */
