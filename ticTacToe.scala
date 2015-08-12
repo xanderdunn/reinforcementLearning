@@ -82,7 +82,7 @@ object TicTacToeLearning {
         playEpisode(ticTacToeWorld, Parameters.epsilon, "")
       }
       environment.resetGameStats()
-      println(s"Testing the trained Q-Learner against ${numberTrainEpisodes} games.  Exploration is disabled.")
+      println(s"Testing the trained Q-Learner against ${numberTestEpisodes} games.  Exploration is disabled.")
       while (environment.totalGames < numberTestEpisodes) {
         playEpisode(ticTacToeWorld, 0.0, "")
       }
