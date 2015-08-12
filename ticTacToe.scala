@@ -40,6 +40,7 @@ object Parameters {
   val neuralNetAlpha = 0.1           // The learning rate in the neural net itself
   val neuralGamma = 0.99 // discount rate
   val neuralInitialBias = 0.15  // This is in the range [0, f(n)] where n is the number of input neurons and f(x) = 1/sqrt(n).   See here: http://neuralnetworksanddeeplearning.com/chap3.html#weight_initialization
+  val neuralNumberHiddenNeurons = 26
 }
 
 object TicTacToeLearning {
@@ -70,7 +71,7 @@ object TicTacToeLearning {
       }
       else {
         numberTrainEpisodes = Parameters.neuralNumberTrainEpisodes
-        println(s"=== Neural Network Q Learning epsilon=${Parameters.epsilon} learningAlpha=${Parameters.neuralValueLearningAlpha} netAlpha=${Parameters.neuralNetAlpha} gamma=${Parameters.neuralGamma}")
+        println(s"=== Neural Network Q Learning epsilon=${Parameters.epsilon} learningAlpha=${Parameters.neuralValueLearningAlpha} netAlpha=${Parameters.neuralNetAlpha} gamma=${Parameters.neuralGamma} numberHiddenNeurons=${Parameters.neuralNumberHiddenNeurons}")
       }
       frame.setContentPane(ticTacToeWorld.ticTacToePanel)
       //frame.setVisible(true)
@@ -98,7 +99,7 @@ object TicTacToeLearning {
     def generateLearningCurves() {
       val settings = List(/*(25000, 300, true, false, true, s"Tabular Learner vs. Random Agent, epsilon=${Parameters.epsilon}  alpha=${Parameters.tabularAlpha}", "tabular_randomStart.pdf"),*/
                       /*(100000, 200, false, false, true, s"Neural Net vs. Random Agent, epsilon=${Parameters.epsilon} alpha=${Parameters.neuralAlpha} gamma=0.2", "neural_randomStart.pdf"),*/ 
-                      (100000, 20, false, false, true, s"Neural Net vs. Random Agent, epsilon=${Parameters.epsilon} learningAlpha=${Parameters.neuralValueLearningAlpha} netAlpha=${Parameters.neuralNetAlpha} gamma=${Parameters.neuralGamma}", "neural_vs_neural.pdf"))
+                      (40000, 100, false, false, true, s"Neural Net vs. Random Agent, epsilon=${Parameters.epsilon} learningAlpha=${Parameters.neuralValueLearningAlpha} netAlpha=${Parameters.neuralNetAlpha} gamma=${Parameters.neuralGamma} ${Parameters.neuralNumberHiddenNeurons} hidden neurons", "neural_vs_neural.pdf"))
 
       for (setting <- settings) {
         val numberEpisodes = setting._1
@@ -243,7 +244,7 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
   var newlyOccupiedSpace = 0
   val stateValues = Map[List[String], Map[Int, Double]]()  // The state-value function is stored in a map with keys that are environment states of the Tic-tac-toe board and values that are arrays of the value of each possible action in this state.  A possible action is any space that is not currently occupied.  
   def tabular = _tabular
-  val neuralNet = new NeuralNet(10, 26, Parameters.neuralNetAlpha, Parameters.neuralInitialBias)
+  val neuralNet = new NeuralNet(10, Parameters.neuralNumberHiddenNeurons, Parameters.neuralNetAlpha, Parameters.neuralInitialBias)
   def random = _random
   var movedOnce = false // To know not to update the value function before its first action
 
