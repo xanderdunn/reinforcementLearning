@@ -259,7 +259,6 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
       else {
         val newStateValues = Map[Int, Double]()
         for (emptySpace <- emptySpaces(state)) {
-          // TODO: If taking this space would result in a win, then set to 1.0.  If taking this space would result in a loss or stalemate, then set to 0.0.  Otherwise, set to 0.5.
           newStateValues(emptySpace) = 0.0
         }
         stateValues(state) = newStateValues
