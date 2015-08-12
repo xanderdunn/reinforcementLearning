@@ -5,7 +5,6 @@
 // TODO: Implement SARSA
 // TODO: Implement SARSA(lambda)
 // TODO: Implement agent vs. agent play, which should learn to always tie.
-// TODO: Use [breeze](https://github.com/scalanlp/breeze/wiki/Quickstart#breeze-viz) or [wisp](https://github.com/quantifind/wisp) libraries to plot the performance of your learner over time.  x = Number of episodes used to train.  y = Average reward received.  Get this average by running the game 2000 times and store the value at each time step.
 
 // Standard Library
 import java.awt.Graphics
@@ -58,17 +57,17 @@ object TicTacToeLearning {
       frame.setVisible(true)
       val environment = ticTacToeWorld.environment
 
-      println(s"Training ${trainSteps} games against a random player.")
+      println(s"Training ${trainSteps} episodes.")
       while (environment.totalGames < trainSteps) { // Train for ${trainSteps} games
-        iterateGameStep(ticTacToeWorld, 10.0, Option(frame), "")
+        iterateGameStep(ticTacToeWorld, 10.0, None, "")
       }
       environment.resetGameStats()
       println(s"Testing the trained Q-Learner against ${testSteps} games.  Exploration is disabled.")
       while (environment.totalGames < testSteps) {
         iterateGameStep(ticTacToeWorld, 0.0, Option(frame), "")
       }
-      println(s"The Q-Learner won ${environment.xWins / environment.totalGames * 100}% of ${testSteps} test games against a random player.")
-      println(s"The random player won ${environment.oWins} of the ${testSteps} test games.")
+      println(s"Player X won ${environment.xWins / environment.totalGames * 100}% of ${testSteps} test games.")
+      println(s"Player O won ${environment.oWins} of the ${testSteps} test games.")
       println(s"${environment.stalemates} of the ${testSteps} test games were stalemates.")
       println("")
 
