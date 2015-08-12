@@ -117,8 +117,6 @@ object TicTacToeLearning {
           finalResults(i) = finalResults(i) / numberIterations * 100.0
           i += 1
         }
-        println(s"finalResuls = ${finalResults.mkString(", ")}")
-        println(s"${episodeNumbers}")
 
         val f = Figure()
         val p = f.subplot(0)
