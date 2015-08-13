@@ -60,7 +60,7 @@ object NeuralNetUtilities {
       return input * (1 - input)
     }
 
-    def tangentPrime(input : Double) : Double = {
+    def tanhPrime(input : Double) : Double = {
       return 3.4318*scala.math.pow((1/scala.math.cosh(2*input)), 2)
     }
 
@@ -168,7 +168,7 @@ object NeuralNetUtilities {
     }
 
     /** tanh activation function */
-    def tangent(input : Double) : Double = {
+    def tanh(input : Double) : Double = {
       return 1.7159 * scala.math.tanh(2/3*input)
     }
 
