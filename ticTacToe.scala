@@ -171,8 +171,7 @@ object TicTacToeLearning {
   def iterateGameStep(ticTacToeWorld : TicTacToeWorld, epsilon : Double, frame : Option[JFrame], collectingDataFor : String) : Double = {  // If you're collecting data, pass in the string "X" or "O" for the player whose data you're interested in.  This method returns 1 if that player won this episode, -1 if it lost, 0 if it was a stalemate, and -2 if the episode hasn't ended.
     val agent = ticTacToeWorld.currentPlayer
     val environment = ticTacToeWorld.environment
-    agent.chooseAction(epsilon, environment.spaceOwners.getList())
-    environment.applyAction(agent, ticTacToeWorld.firstPlayer)
+    environment.applyAction(agent, ticTacToeWorld.firstPlayer, epsilon)
     var returnValue = -2.0
     if (environment.isEndState()) {
       if (environment.playerWon(ticTacToeWorld.agent1) == true) {
@@ -547,9 +546,10 @@ class Environment(agent1 : Agent, agent2 : Agent) {
   }
 
   /** Make the action most recently chosen by the agent take effect. */
-  def applyAction(agent : Agent, firstPlayer : Agent) {
+  def applyAction(agent : Agent, firstPlayer : Agent, epsilon : Double) {
     debugPrint(s"${agent.name} will be rewarded for its past move to space ${agent.newlyOccupiedSpace}")
     giveReward(agent) // For this agent's previous move that wasn't rewarded yet because the subsequent player's move could have put it into an end state
+    agent.chooseAction(epsilon, spaceOwners.getList())
     spaceOwners.setSpaceOwner(agent.newlyOccupiedSpace, agent.name) // Take the space chosen by the agent
     debugPrint(s"${agent.name} moved to space ${agent.newlyOccupiedSpace}")
     val otherPlayer = getOtherAgent(agent)
