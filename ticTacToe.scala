@@ -26,6 +26,7 @@ import EnvironmentUtilities._
 import debug.DebugUtilities._
 
 case class InvalidParameter(message: String) extends Exception(message)
+case class InvalidCall(message: String) extends Exception(message)
 
 object Parameters {
   // Tabular Parameters
@@ -171,7 +172,7 @@ object TicTacToeLearning {
   def iterateGameStep(ticTacToeWorld : TicTacToeWorld, epsilon : Double, frame : Option[JFrame], collectingDataFor : String) : Double = {  // If you're collecting data, pass in the string "X" or "O" for the player whose data you're interested in.  This method returns 1 if that player won this episode, -1 if it lost, 0 if it was a stalemate, and -2 if the episode hasn't ended.
     val agent = ticTacToeWorld.currentPlayer
     val environment = ticTacToeWorld.environment
-    environment.applyAction(agent, ticTacToeWorld.firstPlayer, epsilon)
+    environment.applyAction(agent, epsilon)
     var returnValue = -2.0
     if (environment.isEndState()) {
       if (environment.playerWon(ticTacToeWorld.agent1) == true) {
@@ -222,9 +223,11 @@ class TicTacToeWorld(_tabular : Boolean, agent1Random : Boolean, agent2Random : 
     agent1.previousState = List.fill(9){""}
     agent1.state = List.fill(9){""}
     agent1.movedOnce = false
+    agent1.newlyOccupiedSpace = 0
     agent2.previousState = List.fill(9){""}
     agent2.state = List.fill(9){""}
     agent2.movedOnce = false
+    agent2.newlyOccupiedSpace = 0
   }
 
 }
@@ -338,6 +341,9 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
   /** The environment calls this to reward the agent for its action. */
   def reward(reward : Double) {
     if (movedOnce == true && random == false) {
+      if (newlyOccupiedSpace == 0) {
+        throw new InvalidCall(s"An attempt was made to give reward to ${name} while its previous action is ${newlyOccupiedSpace}. A player must move at least once to be rewarded for it.")
+      }
       debugPrint(s"Give reward ${reward} to ${name} moving from ${previousState} to ${state}")
       if (tabular) {
         // Make sure they're initialized
