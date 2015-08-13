@@ -461,6 +461,9 @@ class TicTacToeBoard() {
   }
 
   def setSpaceOwner(space : Int, newOwner : String) {
+    if (space < 1 || space > 9) {
+      throw new InvalidParameter(s"A player tried to move to space ${space}, which is not a valid space on the Tic-tac-toe board.")
+    }
     if (previousMarkMove == newOwner) {
       throw new TwoMovesInARow(s"${newOwner} tried to make a move on the board, but it was the last player to make a move.  Can't make two moves in a row.")
     }
