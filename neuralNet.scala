@@ -6,7 +6,7 @@ package neuralNet {
 /** Static convenience functions for NeuralNets */
 object NeuralNetUtilities {
     /** Take a state and represent it in a way that can be fed into the neural net */
-  def neuralNetFeatureVectorForStateAction(state : List[String], action : Int) : Array[Double] = {
+  def neuralNetFeatureVectorForStateAction(state : List[String]) : Array[Double] = {
     val featureVector : ArrayBuffer[Double] = ArrayBuffer()
     for (owner <- state) {
       if (owner == "X") {
@@ -19,7 +19,6 @@ object NeuralNetUtilities {
         featureVector += 0.0
       }
     }
-    featureVector += action
     return featureVector.toArray
   }
 }
@@ -56,7 +55,7 @@ object NeuralNetUtilities {
     def train(input : Array[Double], actual : Double) : Double = {
       val result = feedForward(input)
       val error = actual - result
-      val deltaOutput = result * (1 - result) * error
+      val deltaOutput = result * (1 - result) * error // Derivative of the sigmoid function
       backpropogate(deltaOutput)
       return result
     }
