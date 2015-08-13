@@ -57,17 +57,18 @@ object TicTacToeLearning {
     frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE)
     frame.setSize(180, 180)
 
-    val ticTacToeWorldTabularBothRandom = new TicTacToeWorld(true, true, true)
-    val ticTacToeWorldNeuralNetBothRandom = new TicTacToeWorld(false, true, true)
-    val ticTacToeWorldTabularRandom = new TicTacToeWorld(true, false, true)
-    val ticTacToeWorldNeuralNetRandom = new TicTacToeWorld(false, false, true)
-    val ticTacToeWorldTabularTabular = new TicTacToeWorld(true, false, false)
-    val ticTacToeWorldNeuralNetNeuralNet = new TicTacToeWorld(false, false, false)
-    val worlds = Array(ticTacToeWorldTabularBothRandom, ticTacToeWorldNeuralNetBothRandom, ticTacToeWorldTabularRandom, ticTacToeWorldNeuralNetRandom, ticTacToeWorldTabularTabular, ticTacToeWorldNeuralNetNeuralNet)
+    val ticTacToeWorldTabularBothRandom = new TicTacToeWorld(true, true, true, true)
+    val ticTacToeWorldNeuralNetBothRandom = new TicTacToeWorld(false, false, true, true)
+    val ticTacToeWorldTabularRandom = new TicTacToeWorld(true, true, false, true)
+    val ticTacToeWorldNeuralNetRandom = new TicTacToeWorld(false, false, false, true)
+    val ticTacToeWorldTabularTabular = new TicTacToeWorld(true, true, false, false)
+    val ticTacToeWorldNeuralNetNeuralNet = new TicTacToeWorld(false, false, false, false)
+    val ticTacToeWorldNeuralNetTabular = new TicTacToeWorld(false, true, false, false)
+    val worlds = Array(/*ticTacToeWorldTabularBothRandom, ticTacToeWorldNeuralNetBothRandom, ticTacToeWorldTabularRandom, ticTacToeWorldNeuralNetRandom, ticTacToeWorldTabularTabular, ticTacToeWorldNeuralNetNeuralNet, */ticTacToeWorldNeuralNetTabular)
     for (ticTacToeWorld <- worlds) {
       var numberTrainEpisodes = Parameters.tabularNumberTrainEpisodes
       val numberTestEpisodes = Parameters.numberTestEpisodes
-      if (ticTacToeWorld.tabular == true) {
+      if (ticTacToeWorld.agent1Tabular == true) {
         println(s"=== Tabular Q Learning epsilon=${Parameters.epsilon} alpha=${Parameters.tabularAlpha}")
       }
       else {
@@ -160,7 +161,7 @@ object TicTacToeLearning {
     println(s"Playing a training session with ${numberEpisodes} episodes")
     val stats : IndexedSeq[Double] = IndexedSeq.fill(numberEpisodes){0.0}
     var episodeCounter = 0
-    val ticTacToeWorld = new TicTacToeWorld(tabular, playerXRandom, playerORandom)
+    val ticTacToeWorld = new TicTacToeWorld(tabular, tabular, playerXRandom, playerORandom)
     while (episodeCounter < numberEpisodes) {
       stats(episodeCounter) = playEpisode(ticTacToeWorld, epsilon, "X")
       episodeCounter += 1
@@ -211,10 +212,11 @@ object TicTacToeLearning {
 
 
 /** A TicTacToeWorld contains an Agent and an Environment as well as the TicTacToePanel responsible for drawing the two on screen. */
-class TicTacToeWorld(_tabular : Boolean, agent1Random : Boolean, agent2Random : Boolean) {
-  def tabular = _tabular
-  val agent1 = new Agent("X", _tabular, agent1Random)
-  val agent2 = new Agent("O", _tabular, agent2Random)
+class TicTacToeWorld(_agent1Tabular : Boolean, _agent2Tabular : Boolean, agent1Random : Boolean, agent2Random : Boolean) {
+  def agent1Tabular = _agent1Tabular
+  def agent2Tabular = _agent2Tabular
+  val agent1 = new Agent("X", agent1Tabular, agent1Random)
+  val agent2 = new Agent("O", agent2Tabular, agent2Random)
   val agents = List(agent1, agent2)
   val environment = new Environment(agent1, agent2)
   val ticTacToePanel = new TicTacToePanel(this)
