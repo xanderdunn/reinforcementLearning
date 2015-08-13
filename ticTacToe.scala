@@ -272,6 +272,7 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
   /** Query the neural network for the maximum value for the given board state.  The return tuple is the (maximumValue, correspondingAction) */
   def maxNeuralNetValueAndActionForState(state : List[String]) : (Double, Int) = {
     val possibleMoves = emptySpaces(state)
+    debugPrint(s"Player could move into spaces ${possibleMoves.mkString(", ")}")
     var maxValue = 0.0
     var greedyAction  = 0
     for (possibleMove <- possibleMoves) {
@@ -310,6 +311,7 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
         }
       }
       else { // Explore: Randomly choose an action
+        debugPrint(s"${name} is making an exploratory move")
         val prospectiveSpaces = emptySpaces(boardState)
         newlyOccupiedSpace = prospectiveSpaces(nextInt(prospectiveSpaces.size))
       }
@@ -346,11 +348,15 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
         stateValues(previousState)(newlyOccupiedSpace) += updateValue
       }
       else {
+        debugPrint(s"Updating ${name}'s neural net for making the move ${newlyOccupiedSpace} from the state ${previousState}")
         val previousStateFeatureVector = neuralNetFeatureVectorForStateAction(previousState, newlyOccupiedSpace)
         val previousStateValue = neuralNet.feedForward(previousStateFeatureVector)
         val stateMaxValue = maxNeuralNetValueAndActionForState(state)._1
         val targetValue = previousStateValue + Parameters.neuralValueLearningAlpha * (reward + Parameters.neuralGamma * stateMaxValue - previousStateValue)  // q(s,a) + learningrate * (reward + discountRate * q'(s,a) - q(s,a))
         neuralNet.train(previousStateFeatureVector, targetValue)
+        debugPrint(s"Updated player ${name}'s neural net for ${previousStateFeatureVector.mkString(", ")} with reward ${reward} and targetValue ${targetValue}")
+        val previousStateValueUpdated = neuralNet.feedForward(previousStateFeatureVector)
+        debugPrint(s"The state's value was ${previousStateValue} and has been updated to ${previousStateValueUpdated}")
       }
     }
   }
@@ -542,8 +548,10 @@ class Environment(agent1 : Agent, agent2 : Agent) {
 
   /** Make the action most recently chosen by the agent take effect. */
   def applyAction(agent : Agent, firstPlayer : Agent) {
+    debugPrint(s"${agent.name} will be rewarded for its past move to space ${agent.newlyOccupiedSpace}")
     giveReward(agent) // For this agent's previous move that wasn't rewarded yet because the subsequent player's move could have put it into an end state
     spaceOwners.setSpaceOwner(agent.newlyOccupiedSpace, agent.name) // Take the space chosen by the agent
+    debugPrint(s"${agent.name} moved to space ${agent.newlyOccupiedSpace}")
     val otherPlayer = getOtherAgent(agent)
     if (isEndState() == true) {
       giveReward(agent)
@@ -557,11 +565,11 @@ class Environment(agent1 : Agent, agent2 : Agent) {
     totalGames += 1
     if (xWon() == true) {
       xWins += 1
-      debugPrint("X WON!")
+      debugPrint("X WON!\n")
     }
     else if (oWon() == true) {
       oWins += 1
-      debugPrint("O WON!")
+      debugPrint("O WON!\n")
     }
     else if (isFullBoard(spaceOwners.getList())) {
       stalemates += 1
