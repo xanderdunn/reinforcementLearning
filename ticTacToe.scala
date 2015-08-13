@@ -99,7 +99,7 @@ object TicTacToeLearning {
     def generateLearningCurves() {
       val settings = List(/*(25000, 300, true, false, true, s"Tabular Learner vs. Random Agent, epsilon=${Parameters.epsilon}  alpha=${Parameters.tabularAlpha}", "tabular_randomStart.pdf"),*/
                       /*(100000, 200, false, false, true, s"Neural Net vs. Random Agent, epsilon=${Parameters.epsilon} alpha=${Parameters.neuralAlpha} gamma=0.2", "neural_randomStart.pdf"),*/ 
-                      (40000, 100, false, false, true, s"Neural Net vs. Random Agent, epsilon=${Parameters.epsilon} learningAlpha=${Parameters.neuralValueLearningAlpha} netAlpha=${Parameters.neuralNetAlpha} gamma=${Parameters.neuralGamma} ${Parameters.neuralNumberHiddenNeurons} hidden neurons ${Parameters.initialBias} initial bias", "neural_vs_neural.pdf"))
+                      (40000, 100, false, false, true, s"Neural Net vs. Random Agent, epsilon=${Parameters.epsilon} learningAlpha=${Parameters.neuralValueLearningAlpha} netAlpha=${Parameters.neuralNetAlpha} gamma=${Parameters.neuralGamma} ${Parameters.neuralNumberHiddenNeurons} hidden neurons ${Parameters.neuralInitialBias} initial bias", "neural_vs_neural.pdf"))
 
       for (setting <- settings) {
         val numberEpisodes = setting._1
