@@ -274,7 +274,7 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
     val possibleMoves = emptySpaces(state)
     debugPrint(s"Player could move into spaces ${possibleMoves.mkString(", ")}")
     var maxValue = 0.0
-    var greedyAction  = 0
+    var greedyAction = 0
     for (possibleMove <- possibleMoves) {
       val input = neuralNetFeatureVectorForStateAction(state, possibleMove)
       val value = neuralNet.feedForward(input.toArray)
