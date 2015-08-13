@@ -40,7 +40,7 @@ object Parameters {
   val neuralNetAlpha = 0.5             // The learning rate in the neural net itself
   val neuralGamma = 0.99 // discount rate
   val neuralInitialBias = 0.33  // This is in the range [0, f(n)] where n is the number of input neurons and f(x) = 1/sqrt(n).   See here: http://neuralnetworksanddeeplearning.com/chap3.html#weight_initialization
-  val neuralNumberHiddenNeurons = 40 
+  val neuralNumberHiddenNeurons = 40
   val neuralValueLearningAlpha = 1.0/neuralNumberHiddenNeurons // The learning rate used by the value update function
 }
 
@@ -63,7 +63,7 @@ object TicTacToeLearning {
     val ticTacToeWorldNeuralNetRandom = new TicTacToeWorld(false, false, true)
     val ticTacToeWorldTabularTabular = new TicTacToeWorld(true, false, false)
     val ticTacToeWorldNeuralNetNeuralNet = new TicTacToeWorld(false, false, false)
-    val worlds = Array(/*ticTacToeWorldTabularBothRandom, ticTacToeWorldNeuralNetBothRandom,*/ ticTacToeWorldTabularRandom, ticTacToeWorldNeuralNetRandom, ticTacToeWorldTabularTabular, ticTacToeWorldNeuralNetNeuralNet)
+    val worlds = Array(ticTacToeWorldTabularBothRandom, ticTacToeWorldNeuralNetBothRandom, ticTacToeWorldTabularRandom, ticTacToeWorldNeuralNetRandom, ticTacToeWorldTabularTabular, ticTacToeWorldNeuralNetNeuralNet)
     for (ticTacToeWorld <- worlds) {
       var numberTrainEpisodes = Parameters.tabularNumberTrainEpisodes
       val numberTestEpisodes = Parameters.numberTestEpisodes
@@ -89,12 +89,12 @@ object TicTacToeLearning {
       }
       val uniqueBoardStates = ticTacToeWorld.environment.spaceOwners.uniqueBoardStates
       println(s"${uniqueBoardStates.size} unique board states hit")
-      for (i <- 1 to 10) {
-          val maxValue = uniqueBoardStates.maxBy(_._2)._2
-          val maxValueKey = uniqueBoardStates.maxBy(_._2)._1
-          println(s"State ${maxValueKey.mkString(", ")} hit ${maxValue} times")
-          uniqueBoardStates(maxValueKey) = 0
-      }
+      //for (i <- 1 to 10) {
+          //val maxValue = uniqueBoardStates.maxBy(_._2)._2
+          //val maxValueKey = uniqueBoardStates.maxBy(_._2)._1
+          //println(s"State ${maxValueKey.mkString(", ")} hit ${maxValue} times")
+          //uniqueBoardStates(maxValueKey) = 0
+      //}
       println(s"Player X won ${environment.xWins / environment.totalGames * 100}% of ${numberTestEpisodes} test games.")
       println(s"Player O won ${environment.oWins} of the ${numberTestEpisodes} test games.")
       println(s"${environment.stalemates} of the ${numberTestEpisodes} test games were stalemates.")
@@ -220,9 +220,13 @@ class TicTacToeWorld(_tabular : Boolean, agent1Random : Boolean, agent2Random : 
   val ticTacToePanel = new TicTacToePanel(this)
   var currentPlayer = agent1
   var firstPlayer = agent1
+  val xLostStates = scala.collection.mutable.Map[List[String], Int]()
 
     /** Reset the agent and states for a new episode */
   def endEpisode() {
+    //if (environment.oWon() == true) {
+      //println(s"X lost choosing ${agent1.newlyOccupiedSpace} from ${agent1.previousState} to ${agent1.state}")
+    //}
     currentPlayer = agents(scala.util.Random.nextInt(2))
     debugPrint(s"firstPlayer = ${firstPlayer.name}")
     environment.spaceOwners.resetBoard()
@@ -253,7 +257,7 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
   val stateValues = Map[List[String], Map[Int, Double]]()  // The state-value function is stored in a map with keys that are environment states of the Tic-tac-toe board and values that are arrays of the value of each possible action in this state.  A possible action is any space that is not currently occupied.  
   def tabular = _tabular
   //val neuralNet = new NeuralNet(10, Parameters.neuralNumberHiddenNeurons, Parameters.neuralNetAlpha, Parameters.neuralInitialBias)
-  val neuralNets = Map(1 -> new NeuralNet(9, Parameters.neuralNumberHiddenNeurons, Parameters.neuralNetAlpha, Parameters.neuralInitialBias), 2 -> new NeuralNet(9, Parameters.neuralNumberHiddenNeurons, Parameters.neuralNetAlpha, Parameters.neuralInitialBias), 3 -> new NeuralNet(9, Parameters.neuralNumberHiddenNeurons, Parameters.neuralNetAlpha, Parameters.neuralInitialBias), 4 -> new NeuralNet(9, Parameters.neuralNumberHiddenNeurons, Parameters.neuralNetAlpha, Parameters.neuralInitialBias), 5 -> new NeuralNet(9, Parameters.neuralNumberHiddenNeurons, Parameters.neuralNetAlpha, Parameters.neuralInitialBias), 6 -> new NeuralNet(9, Parameters.neuralNumberHiddenNeurons, Parameters.neuralNetAlpha, Parameters.neuralInitialBias), 7 -> new NeuralNet(9, Parameters.neuralNumberHiddenNeurons, Parameters.neuralNetAlpha, Parameters.neuralInitialBias), 8 -> new NeuralNet(9, Parameters.neuralNumberHiddenNeurons, Parameters.neuralNetAlpha, Parameters.neuralInitialBias), 9 -> new NeuralNet(9, Parameters.neuralNumberHiddenNeurons, Parameters.neuralNetAlpha, Parameters.neuralInitialBias))
+  val neuralNets = Map(1 -> new NeuralNet(18, Parameters.neuralNumberHiddenNeurons, Parameters.neuralNetAlpha, Parameters.neuralInitialBias), 2 -> new NeuralNet(18, Parameters.neuralNumberHiddenNeurons, Parameters.neuralNetAlpha, Parameters.neuralInitialBias), 3 -> new NeuralNet(18, Parameters.neuralNumberHiddenNeurons, Parameters.neuralNetAlpha, Parameters.neuralInitialBias), 4 -> new NeuralNet(18, Parameters.neuralNumberHiddenNeurons, Parameters.neuralNetAlpha, Parameters.neuralInitialBias), 5 -> new NeuralNet(18, Parameters.neuralNumberHiddenNeurons, Parameters.neuralNetAlpha, Parameters.neuralInitialBias), 6 -> new NeuralNet(18, Parameters.neuralNumberHiddenNeurons, Parameters.neuralNetAlpha, Parameters.neuralInitialBias), 7 -> new NeuralNet(18, Parameters.neuralNumberHiddenNeurons, Parameters.neuralNetAlpha, Parameters.neuralInitialBias), 8 -> new NeuralNet(18, Parameters.neuralNumberHiddenNeurons, Parameters.neuralNetAlpha, Parameters.neuralInitialBias), 9 -> new NeuralNet(18, Parameters.neuralNumberHiddenNeurons, Parameters.neuralNetAlpha, Parameters.neuralInitialBias))
   def random = _random
   var movedOnce = false // To know not to update the value function before its first action
 
@@ -284,13 +288,25 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
     debugPrint(s"${name} is getting max neural net values for spaces ${possibleMoves.mkString(", ")}")
     var maxValue = 0.0
     var greedyAction = 0
+    val stateValues = Map[Int, Double]()
     for (possibleMove <- possibleMoves) {
-      val input = neuralNetFeatureVectorForStateAction(state, possibleMove)
-      val value = neuralNet.feedForward(input.toArray)
+      val input = neuralNetFeatureVectorForStateAction(state)
+      val value = neuralNets(possibleMove).feedForward(input.toArray)
+      stateValues(possibleMove) = value
       if (value > maxValue) {
         greedyAction = possibleMove
         maxValue = value
       }
+    }
+    debugPrint(s"Player is choosing state values from ${stateValues}")
+    val maxValueSpaces = ArrayBuffer[Int]()
+    for ((key, value) <- stateValues) {
+      if (value == maxValue) {
+        maxValueSpaces += key
+      }
+    }
+    if (maxValueSpaces.size > 1) {
+      debugPrint(s"Have max value state ties on states ${maxValueSpaces.mkString(", ")}")
     }
     return (maxValue, greedyAction)
   }
@@ -359,6 +375,18 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
         stateValues(previousState)(newlyOccupiedSpace) += updateValue
       }
       else {
+        //if (name == "X") {
+          //if (previousState == List("O", "X", "", "", "X", "", "O", "O", "")) {
+            //println(s"previousState = ${previousState}")
+            //println(s"Player X made move ${newlyOccupiedSpace}")
+            //println(s"state = ${state}")
+            //println(s"reward = ${reward}")
+            //for (i <- emptySpaces(previousState)) {
+              //val value = neuralNets(i).feedForward(neuralNetFeatureVectorForStateAction(previousState))
+              //println(s"Value for action ${i} in this previousState is ${value}")
+            //}
+          //}
+        //}
         debugPrint(s"Updating ${name}'s neural net for making the move ${newlyOccupiedSpace} from the state ${previousState}")
         val previousStateFeatureVector = neuralNetFeatureVectorForStateAction(previousState)
         val previousStateValue = neuralNets(newlyOccupiedSpace).feedForward(previousStateFeatureVector)
@@ -367,8 +395,14 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
         neuralNets(newlyOccupiedSpace).train(previousStateFeatureVector, targetValue)
         debugPrint(s"Updated player ${name}'s neural net for ${previousStateFeatureVector.mkString(", ")} with reward ${reward} and targetValue ${targetValue}")
         val previousStateValueUpdated = neuralNets(newlyOccupiedSpace).feedForward(previousStateFeatureVector)
-        if (previousState == List("O", "", "", "O", "", "X", "", "X", "O")) {
-          println(s"The state's value was ${previousStateValue} and has been updated to ${previousStateValueUpdated}")
+        //if (previousState == List("O", "", "", "O", "", "X", "", "X", "O")) {
+          //println(s"The state's value was ${previousStateValue} and has been updated to ${previousStateValueUpdated}")
+          //for (i <- emptySpaces(previousState)) {
+            //val value = neuralNets(i).feedForward(neuralNetFeatureVectorForStateAction(previousState))
+            //println(s"Value for action ${i} in this previousState is ${value}")
+          //}
+          //println("")
+        //}
       }
     }
   }
@@ -414,6 +448,7 @@ class TicTacToeBoard() {
   case class CanNotMoveThereException(message: String) extends Exception(message)
   case class TwoMovesInARow(message: String) extends Exception(message)
   private var previousMarkMove = "" // The mark, X or O, of the last thing that was added to the board
+  val uniqueBoardStates = scala.collection.mutable.Map[List[String], Int]()
 
   def emptyMutableList() : MutableList[String] = {
     return MutableList.fill(9){""}
@@ -434,6 +469,12 @@ class TicTacToeBoard() {
     }
     else {
       spaceOwners(space - 1) = newOwner
+      if (uniqueBoardStates.contains(spaceOwners.toList) == false) {
+        uniqueBoardStates(spaceOwners.toList) = 1
+      }
+      else {
+        uniqueBoardStates(spaceOwners.toList) += 1
+      }
     }
   }
 
@@ -559,8 +600,7 @@ class Environment(agent1 : Agent, agent2 : Agent) {
   }
 
   /** Make the action most recently chosen by the agent take effect. */
-  def applyAction(agent : Agent, firstPlayer : Agent, epsilon : Double) {
-    debugPrint(s"${agent.name} will be rewarded for its past move to space ${agent.newlyOccupiedSpace}")
+  def applyAction(agent : Agent, epsilon : Double) {
     giveReward(agent) // For this agent's previous move that wasn't rewarded yet because the subsequent player's move could have put it into an end state
     agent.chooseAction(epsilon, spaceOwners.getList())
     spaceOwners.setSpaceOwner(agent.newlyOccupiedSpace, agent.name) // Take the space chosen by the agent
