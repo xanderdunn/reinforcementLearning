@@ -4,7 +4,8 @@
 
 // TODO: Implement SARSA
 // TODO: Implement SARSA(lambda)
-// TODO: Implement agent vs. agent play, which should learn to always tie.
+// TODO: Decrease epsilon over time.  In the neural network case, potentially increase it in hopes of jumping out of local optima.
+// TODO: Improve the neural network's ability to approximate the value function
 
 // Standard Library
 import java.awt.Graphics
@@ -64,7 +65,7 @@ object TicTacToeLearning {
     val ticTacToeWorldTabularTabular = new TicTacToeWorld(true, true, false, false)
     val ticTacToeWorldNeuralNetNeuralNet = new TicTacToeWorld(false, false, false, false)
     val ticTacToeWorldNeuralNetTabular = new TicTacToeWorld(false, true, false, false)
-    val worlds = Array(/*ticTacToeWorldTabularBothRandom, ticTacToeWorldNeuralNetBothRandom, ticTacToeWorldTabularRandom, ticTacToeWorldNeuralNetRandom, ticTacToeWorldTabularTabular, ticTacToeWorldNeuralNetNeuralNet, */ticTacToeWorldNeuralNetTabular)
+    val worlds = Array(ticTacToeWorldTabularBothRandom, ticTacToeWorldNeuralNetBothRandom, ticTacToeWorldTabularRandom, ticTacToeWorldNeuralNetRandom, ticTacToeWorldTabularTabular, ticTacToeWorldNeuralNetNeuralNet, ticTacToeWorldNeuralNetTabular)
     for (ticTacToeWorld <- worlds) {
       var numberTrainEpisodes = Parameters.tabularNumberTrainEpisodes
       val numberTestEpisodes = Parameters.numberTestEpisodes
