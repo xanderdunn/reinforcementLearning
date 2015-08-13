@@ -12,6 +12,7 @@
     // It depends on LGPL code.
       "org.scalanlp" %% "breeze-viz" % "0.11.2"
   )
+  libraryDependencies += "org.scalatest" % "scalatest_2.11" % "2.2.4" % "test"
   resolvers ++= Seq(
     // other resolvers here
     // if you want to use snapshot builds (currently 0.12-SNAPSHOT), use this.
