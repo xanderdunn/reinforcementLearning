@@ -287,15 +287,18 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
   /** Query the neural network for the maximum value for the given board state.  The return tuple is the (maximumValue, correspondingAction) */
   def maxNeuralNetValueAndActionForState(state : List[String]) : (Double, Int) = {
     val possibleMoves = emptySpaces(state)
+    if (possibleMoves.size == 0) { // The value of an end state position is always 0, and there is no position to take next
+      return (0.0, 0)
+    }
     debugPrint(s"${name} is getting max neural net values for spaces ${possibleMoves.mkString(", ")}")
-    var maxValue = 0.0
+    var maxValue = Double.MinValue
     var greedyAction = 0
     val stateValues = Map[Int, Double]()
     for (possibleMove <- possibleMoves) {
       val input = neuralNetFeatureVectorForStateAction(state)
       val value = neuralNets(possibleMove).feedForward(input.toArray)
       stateValues(possibleMove) = value
-      if (value > maxValue) {
+      if (value > maxValue || maxValue == Double.MinValue) {
         greedyAction = possibleMove
         maxValue = value
       }
@@ -310,7 +313,7 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
     if (maxValueSpaces.size > 1) {
       debugPrint(s"Have max value state ties on states ${maxValueSpaces.mkString(", ")}")
     }
-    return (maxValue, greedyAction)
+    return (maxValue, maxValueSpaces(scala.util.Random.nextInt(maxValueSpaces.size))) // Break ties randomly
   }
 
   case class AskingForActionOnFullBoard(message: String) extends Exception(message)
