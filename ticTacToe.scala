@@ -37,10 +37,10 @@ object Parameters {
   // Both
   val epsilon = 0.2
   val numberTestEpisodes = 20000
+  val gamma = 0.99 // discount rate
   // Neural Net Parameters
   val neuralNumberTrainEpisodes = 200000
   val neuralNetAlpha = 0.5             // The learning rate in the neural net itself
-  val neuralGamma = 0.99 // discount rate
   val neuralInitialBias = 0.33  // This is in the range [0, f(n)] where n is the number of input neurons and f(x) = 1/sqrt(n).   See here: http://neuralnetworksanddeeplearning.com/chap3.html#weight_initialization
   val neuralNumberHiddenNeurons = 40
   val neuralValueLearningAlpha = 1.0/neuralNumberHiddenNeurons // The learning rate used by the value update function
@@ -59,13 +59,13 @@ object TicTacToeLearning {
     frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE)
     frame.setSize(180, 180)
 
-    val ticTacToeWorldTabularBothRandom = new TicTacToeWorld(true, true, true, true)
+    val ticTacToeWorldBothRandom = new TicTacToeWorld(true, true, true, true)
     val ticTacToeWorldTabularRandom = new TicTacToeWorld(true, true, false, true)
     val ticTacToeWorldNeuralNetRandom = new TicTacToeWorld(false, false, false, true)
     val ticTacToeWorldTabularTabular = new TicTacToeWorld(true, true, false, false)
     val ticTacToeWorldNeuralNetNeuralNet = new TicTacToeWorld(false, false, false, false)
     val ticTacToeWorldNeuralNetTabular = new TicTacToeWorld(false, true, false, false)
-    val worlds = Array(/*ticTacToeWorldBothRandom, ticTacToeWorldTabularRandom, */ticTacToeWorldNeuralNetRandom, /*ticTacToeWorldTabularTabular, */ticTacToeWorldNeuralNetNeuralNet/*, ticTacToeWorldNeuralNetTabular*/)
+    val worlds = Array(ticTacToeWorldBothRandom, ticTacToeWorldTabularRandom, ticTacToeWorldNeuralNetRandom, ticTacToeWorldTabularTabular, ticTacToeWorldNeuralNetNeuralNet, ticTacToeWorldNeuralNetTabular)
     var i = 0
       val agentDescriptions = List("Random vs. Random", "Tabular vs. Random", "Neural vs. Random", "Tabular vs. Tabular", "Neural vs. Neural", "Neural vs. Tabular")
     for (ticTacToeWorld <- worlds) {
@@ -74,7 +74,12 @@ object TicTacToeLearning {
       if (ticTacToeWorld.agent1Tabular != true) {
         numberTrainEpisodes = Parameters.neuralNumberTrainEpisodes
       }
+      if (i == 0) {
+        println(s"=== ${agentDescriptions(i)}")
+      }
+      else {
         println(s"=== ${agentDescriptions(i)} epsilon=${Parameters.epsilon} learningAlpha=${Parameters.neuralValueLearningAlpha} netAlpha=${Parameters.neuralNetAlpha} gamma=${Parameters.gamma} numberHiddenNeurons=${Parameters.neuralNumberHiddenNeurons} initialBias=${Parameters.neuralInitialBias}")
+      }
       frame.setContentPane(ticTacToeWorld.ticTacToePanel)
       //frame.setVisible(true)
       val environment = ticTacToeWorld.environment
@@ -103,7 +108,7 @@ object TicTacToeLearning {
     def generateLearningCurves() {
       val settings = List(/*(25000, 300, true, false, true, s"Tabular Learner vs. Random Agent, epsilon=${Parameters.epsilon}  alpha=${Parameters.tabularAlpha}", "tabular_randomStart.pdf"),*/
                       /*(100000, 200, false, false, true, s"Neural Net vs. Random Agent, epsilon=${Parameters.epsilon} alpha=${Parameters.neuralAlpha} gamma=0.2", "neural_randomStart.pdf"),*/ 
-                      (40000, 100, false, false, true, s"Neural Net vs. Random Agent, epsilon=${Parameters.epsilon} learningAlpha=${Parameters.neuralValueLearningAlpha} netAlpha=${Parameters.neuralNetAlpha} gamma=${Parameters.neuralGamma} ${Parameters.neuralNumberHiddenNeurons} hidden neurons ${Parameters.neuralInitialBias} initial bias", "neural_vs_neural.pdf"))
+                      (40000, 100, false, false, true, s"Neural Net vs. Random Agent, epsilon=${Parameters.epsilon} learningAlpha=${Parameters.neuralValueLearningAlpha} netAlpha=${Parameters.neuralNetAlpha} gamma=${Parameters.gamma} ${Parameters.neuralNumberHiddenNeurons} hidden neurons ${Parameters.neuralInitialBias} initial bias", "neural_vs_neural.pdf"))
 
       for (setting <- settings) {
         val numberEpisodes = setting._1
@@ -390,7 +395,7 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
         val previousStateFeatureVector = neuralNetFeatureVectorForStateAction(previousState)
         val previousStateValue = neuralNets(newlyOccupiedSpace).feedForward(previousStateFeatureVector)
         val stateMaxValue = maxNeuralNetValueAndActionForState(state)._1
-        val targetValue = previousStateValue + Parameters.neuralValueLearningAlpha * (reward + Parameters.neuralGamma * stateMaxValue - previousStateValue)  // q(s,a) + learningrate * (reward + discountRate * q'(s,a) - q(s,a))
+        val targetValue = previousStateValue + Parameters.neuralValueLearningAlpha * (reward + Parameters.gamma * stateMaxValue - previousStateValue)  // q(s,a) + learningrate * (reward + discountRate * q'(s,a) - q(s,a))
         neuralNets(newlyOccupiedSpace).train(previousStateFeatureVector, targetValue)
         debugPrint(s"Updated player ${name}'s neural net for ${previousStateFeatureVector.mkString(", ")} with reward ${reward} and targetValue ${targetValue}")
         val previousStateValueUpdated = neuralNets(newlyOccupiedSpace).feedForward(previousStateFeatureVector)
