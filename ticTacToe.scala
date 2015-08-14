@@ -255,7 +255,13 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
   val stateValues = Map[List[String], Map[Int, Double]]()  // The state-value function is stored in a map with keys that are environment states of the Tic-tac-toe board and values that are arrays of the value of each possible action in this state.  A possible action is any space that is not currently occupied.  
   def tabular = _tabular
   //val neuralNet = new NeuralNet(10, Parameters.neuralNumberHiddenNeurons, Parameters.neuralNetAlpha, Parameters.neuralInitialBias)
-  val neuralNets = Map(1 -> new NeuralNet(18, Parameters.neuralNumberHiddenNeurons, Parameters.neuralNetAlpha, Parameters.neuralInitialBias), 2 -> new NeuralNet(18, Parameters.neuralNumberHiddenNeurons, Parameters.neuralNetAlpha, Parameters.neuralInitialBias), 3 -> new NeuralNet(18, Parameters.neuralNumberHiddenNeurons, Parameters.neuralNetAlpha, Parameters.neuralInitialBias), 4 -> new NeuralNet(18, Parameters.neuralNumberHiddenNeurons, Parameters.neuralNetAlpha, Parameters.neuralInitialBias), 5 -> new NeuralNet(18, Parameters.neuralNumberHiddenNeurons, Parameters.neuralNetAlpha, Parameters.neuralInitialBias), 6 -> new NeuralNet(18, Parameters.neuralNumberHiddenNeurons, Parameters.neuralNetAlpha, Parameters.neuralInitialBias), 7 -> new NeuralNet(18, Parameters.neuralNumberHiddenNeurons, Parameters.neuralNetAlpha, Parameters.neuralInitialBias), 8 -> new NeuralNet(18, Parameters.neuralNumberHiddenNeurons, Parameters.neuralNetAlpha, Parameters.neuralInitialBias), 9 -> new NeuralNet(18, Parameters.neuralNumberHiddenNeurons, Parameters.neuralNetAlpha, Parameters.neuralInitialBias))
+  val neuralNets = {
+    val mutableNeuralNets = Map[Int, NeuralNet]()
+    for (i <- 1 to 9) {
+      mutableNeuralNets(i) = new NeuralNet(18, Parameters.neuralNumberHiddenNeurons, Parameters.neuralNetAlpha, Parameters.neuralInitialBias)
+    }
+    mutableNeuralNets
+  }
   def random = _random
   var movedOnce = false // To know not to update the value function before its first action
 
