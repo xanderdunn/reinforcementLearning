@@ -28,6 +28,32 @@ object NeuralNetUtilities {
   }
 }
 
+object ActivationFunctions {
+  def bipolarSigmoidPrime(input: Double) : Double = {
+    return (1 + sigmoid(input)) * (1 - sigmoid(input)) / 2
+  }
+
+  def bipolarSigmoid(input : Double) : Double = {
+    return 2/(1 + Math.exp(-input)) - 1
+  }
+
+  def sigmoidPrime(input : Double) : Double = {
+    return input * (1 - input)
+  }
+
+  def tanhPrime(input : Double) : Double = {
+    return 3.4318*scala.math.pow((1/scala.math.cosh(2*input)), 2)
+  }
+
+  def tanh(input : Double) : Double = {
+    return 1.7159 * scala.math.tanh(2/3*input)
+  }
+
+  def sigmoid(input : Double) : Double = {
+    return 1.0 / (1.0 + Math.exp(-input))
+  }
+
+}
   /** A simple neural network with a single input neuron and a single output neuron and a given number of hidden neurons. */
   class NeuralNet(numberInputNeurons : Int , numberHiddenNeurons : Int, learningRate : Double, initialBias : Double) {
     private val _outputNeuron = new Neuron(false, initialBias)
@@ -56,19 +82,11 @@ object NeuralNetUtilities {
       new Connection(hiddenNeuron, _outputNeuron) // Connect the hidden neuron to the output neuron
     }
 
-    def sigmoidPrime(input : Double) : Double = {
-      return input * (1 - input)
-    }
-
-    def tanhPrime(input : Double) : Double = {
-      return 3.4318*scala.math.pow((1/scala.math.cosh(2*input)), 2)
-    }
-
     /** Take a supervised output value and backpropogate the error through the neural net. */
     def train(input : Array[Double], actual : Double) : Double = {
       val result = feedForward(input)
       val error = actual - result
-      val deltaOutput = sigmoidPrime(result) * error // Derivative of the sigmoid function
+      val deltaOutput = ActivationFunctions.sigmoidPrime(result) * error // Derivative of the sigmoid function
       backpropogate(deltaOutput)
       return result
     }
@@ -159,22 +177,12 @@ object NeuralNetUtilities {
           }
         }
         if (hasInputConnection == true) {
-          _sum = sigmoid(sum + bias)
+          _sum = ActivationFunctions.sigmoid(sum + bias)
         }
         else { // This is an input neuron
           _sum = input
         }
       }
-    }
-
-    /** tanh activation function */
-    def tanh(input : Double) : Double = {
-      return 1.7159 * scala.math.tanh(2/3*input)
-    }
-
-    /** Sigmoid activation function */
-    def sigmoid(input : Double) : Double = {
-      return 1.0 / (1.0 + Math.exp(-input))
     }
 
     /** Return the most recently calculated value */
