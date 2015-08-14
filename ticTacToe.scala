@@ -29,6 +29,7 @@ import debug.DebugUtilities._
 case class InvalidParameter(message: String) extends Exception(message)
 case class InvalidCall(message: String) extends Exception(message)
 
+/** Parameters for the Q value update function and the neural network.  */
 object Parameters {
   // Tabular Parameters
   val tabularAlpha = 0.1
@@ -49,7 +50,7 @@ object TicTacToeLearning {
   /** Executed to initiate playing Tic-tac-toe with Q-Learning. */
   def main(args: Array[String]) {
 
-    if (false) {
+    if (false) { // Set to true if you want to generate graphs instead of initiating single test runs with output in the terminal
       PlotGenerator.generateLearningCurves()
       System.exit(0)
     }
@@ -59,23 +60,21 @@ object TicTacToeLearning {
     frame.setSize(180, 180)
 
     val ticTacToeWorldTabularBothRandom = new TicTacToeWorld(true, true, true, true)
-    val ticTacToeWorldNeuralNetBothRandom = new TicTacToeWorld(false, false, true, true)
     val ticTacToeWorldTabularRandom = new TicTacToeWorld(true, true, false, true)
     val ticTacToeWorldNeuralNetRandom = new TicTacToeWorld(false, false, false, true)
     val ticTacToeWorldTabularTabular = new TicTacToeWorld(true, true, false, false)
     val ticTacToeWorldNeuralNetNeuralNet = new TicTacToeWorld(false, false, false, false)
     val ticTacToeWorldNeuralNetTabular = new TicTacToeWorld(false, true, false, false)
-    val worlds = Array(ticTacToeWorldTabularBothRandom, ticTacToeWorldNeuralNetBothRandom, ticTacToeWorldTabularRandom, ticTacToeWorldNeuralNetRandom, ticTacToeWorldTabularTabular, ticTacToeWorldNeuralNetNeuralNet, ticTacToeWorldNeuralNetTabular)
+    val worlds = Array(/*ticTacToeWorldBothRandom, ticTacToeWorldTabularRandom, */ticTacToeWorldNeuralNetRandom, /*ticTacToeWorldTabularTabular, */ticTacToeWorldNeuralNetNeuralNet/*, ticTacToeWorldNeuralNetTabular*/)
+    var i = 0
+      val agentDescriptions = List("Random vs. Random", "Tabular vs. Random", "Neural vs. Random", "Tabular vs. Tabular", "Neural vs. Neural", "Neural vs. Tabular")
     for (ticTacToeWorld <- worlds) {
       var numberTrainEpisodes = Parameters.tabularNumberTrainEpisodes
       val numberTestEpisodes = Parameters.numberTestEpisodes
-      if (ticTacToeWorld.agent1Tabular == true) {
-        println(s"=== Tabular Q Learning epsilon=${Parameters.epsilon} alpha=${Parameters.tabularAlpha}")
-      }
-      else {
+      if (ticTacToeWorld.agent1Tabular != true) {
         numberTrainEpisodes = Parameters.neuralNumberTrainEpisodes
-        println(s"=== Neural Network Q Learning epsilon=${Parameters.epsilon} learningAlpha=${Parameters.neuralValueLearningAlpha} netAlpha=${Parameters.neuralNetAlpha} gamma=${Parameters.neuralGamma} numberHiddenNeurons=${Parameters.neuralNumberHiddenNeurons} initialBias=${Parameters.neuralInitialBias}")
       }
+        println(s"=== ${agentDescriptions(i)} epsilon=${Parameters.epsilon} learningAlpha=${Parameters.neuralValueLearningAlpha} netAlpha=${Parameters.neuralNetAlpha} gamma=${Parameters.gamma} numberHiddenNeurons=${Parameters.neuralNumberHiddenNeurons} initialBias=${Parameters.neuralInitialBias}")
       frame.setContentPane(ticTacToeWorld.ticTacToePanel)
       //frame.setVisible(true)
       val environment = ticTacToeWorld.environment
@@ -91,17 +90,11 @@ object TicTacToeLearning {
       }
       val uniqueBoardStates = ticTacToeWorld.environment.spaceOwners.uniqueBoardStates
       println(s"${uniqueBoardStates.size} unique board states hit")
-      //for (i <- 1 to 10) {
-          //val maxValue = uniqueBoardStates.maxBy(_._2)._2
-          //val maxValueKey = uniqueBoardStates.maxBy(_._2)._1
-          //println(s"State ${maxValueKey.mkString(", ")} hit ${maxValue} times")
-          //uniqueBoardStates(maxValueKey) = 0
-      //}
       println(s"Player X won ${environment.xWins / environment.totalGames * 100}% of ${numberTestEpisodes} test games.")
       println(s"Player O won ${environment.oWins} of the ${numberTestEpisodes} test games.")
       println(s"${environment.stalemates} of the ${numberTestEpisodes} test games were stalemates.")
       println("")
-
+      i += 1
     }
       System.exit(0)
   }
