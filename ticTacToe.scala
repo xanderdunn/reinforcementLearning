@@ -225,9 +225,6 @@ class TicTacToeWorld(_agent1Tabular : Boolean, _agent2Tabular : Boolean, agent1R
 
     /** Reset the agent and states for a new episode */
   def endEpisode() {
-    //if (environment.oWon() == true) {
-      //println(s"X lost choosing ${agent1.newlyOccupiedSpace} from ${agent1.previousState} to ${agent1.state}")
-    //}
     currentPlayer = agents(scala.util.Random.nextInt(2))
     debugPrint(s"firstPlayer = ${firstPlayer.name}")
     environment.spaceOwners.resetBoard()
@@ -379,18 +376,6 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
         stateValues(previousState)(newlyOccupiedSpace) += updateValue
       }
       else {
-        //if (name == "X") {
-          //if (previousState == List("O", "X", "", "", "X", "", "O", "O", "")) {
-            //println(s"previousState = ${previousState}")
-            //println(s"Player X made move ${newlyOccupiedSpace}")
-            //println(s"state = ${state}")
-            //println(s"reward = ${reward}")
-            //for (i <- emptySpaces(previousState)) {
-              //val value = neuralNets(i).feedForward(neuralNetFeatureVectorForStateAction(previousState))
-              //println(s"Value for action ${i} in this previousState is ${value}")
-            //}
-          //}
-        //}
         debugPrint(s"Updating ${name}'s neural net for making the move ${newlyOccupiedSpace} from the state ${previousState}")
         val previousStateFeatureVector = neuralNetFeatureVectorForStateAction(previousState)
         val previousStateValue = neuralNets(newlyOccupiedSpace).feedForward(previousStateFeatureVector)
@@ -399,14 +384,6 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
         neuralNets(newlyOccupiedSpace).train(previousStateFeatureVector, targetValue)
         debugPrint(s"Updated player ${name}'s neural net for ${previousStateFeatureVector.mkString(", ")} with reward ${reward} and targetValue ${targetValue}")
         val previousStateValueUpdated = neuralNets(newlyOccupiedSpace).feedForward(previousStateFeatureVector)
-        //if (previousState == List("O", "", "", "O", "", "X", "", "X", "O")) {
-          //println(s"The state's value was ${previousStateValue} and has been updated to ${previousStateValueUpdated}")
-          //for (i <- emptySpaces(previousState)) {
-            //val value = neuralNets(i).feedForward(neuralNetFeatureVectorForStateAction(previousState))
-            //println(s"Value for action ${i} in this previousState is ${value}")
-          //}
-          //println("")
-        //}
       }
     }
   }
