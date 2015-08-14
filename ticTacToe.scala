@@ -6,6 +6,7 @@
 // TODO: Implement SARSA(lambda)
 // TODO: Decrease epsilon over time.  In the neural network case, potentially increase it in hopes of jumping out of local optima.
 // TODO: Improve the neural network's ability to approximate the value function
+// TODO: Implement a switch to turn off learning altogether, not merely exploration
 
 // Standard Library
 import java.awt.Graphics
@@ -106,9 +107,10 @@ object TicTacToeLearning {
 
   object PlotGenerator {
     def generateLearningCurves() {
-      val settings = List(/*(25000, 300, true, false, true, s"Tabular Learner vs. Random Agent, epsilon=${Parameters.epsilon}  alpha=${Parameters.tabularAlpha}", "tabular_randomStart.pdf"),*/
-                      /*(100000, 200, false, false, true, s"Neural Net vs. Random Agent, epsilon=${Parameters.epsilon} alpha=${Parameters.neuralAlpha} gamma=0.2", "neural_randomStart.pdf"),*/ 
-                      (40000, 100, false, false, true, s"Neural Net vs. Random Agent, epsilon=${Parameters.epsilon} learningAlpha=${Parameters.neuralValueLearningAlpha} netAlpha=${Parameters.neuralNetAlpha} gamma=${Parameters.gamma} ${Parameters.neuralNumberHiddenNeurons} hidden neurons ${Parameters.neuralInitialBias} initial bias", "neural_vs_neural.pdf"))
+      val settings = List((25000, 200, true, false, true, s"Tabular vs. Random Agent, epsilon=${Parameters.epsilon}  alpha=${Parameters.tabularAlpha}", "tabularVrandom.pdf", 1),
+                      (50000, 100, false, false, true, s"Neural vs. Random Agent, epsilon=${Parameters.epsilon} learningAlpha=${Parameters.neuralValueLearningAlpha} netAlpha=${Parameters.neuralNetAlpha} gamma=${Parameters.gamma} ${Parameters.neuralNumberHiddenNeurons} hidden neurons ${Parameters.neuralInitialBias} initialBias", "neuralVrandom.pdf", 1),*/
+                      (4000, 150, true, false, false, s"Tabular vs. Tabular, epsilon=${Parameters.epsilon}  alpha=${Parameters.tabularAlpha}", "tabularVtabular.pdf", 2), 
+                      (40000, 100, false, false, false, s"Neural vs. Neural, epsilon=${Parameters.epsilon} learningAlpha=${Parameters.neuralValueLearningAlpha} netAlpha=${Parameters.neuralNetAlpha} gamma=${Parameters.gamma} ${Parameters.neuralNumberHiddenNeurons} hidden neurons ${Parameters.neuralInitialBias} initial bias", "neuralVneural.pdf", 3))
 
       for (setting <- settings) {
         val numberEpisodes = setting._1
@@ -118,6 +120,7 @@ object TicTacToeLearning {
         val playerORandom = setting._5
         val title = setting._6
         val filename = setting._7
+        val plotting = setting._8 // 1 if I'm plotting player X wins 2 if I'm plotting stalemates and 3 if I'm plotting both player 3 and player 4 wins
 
         var i = 0
         val episodeNumbers : Seq[Double] = Seq.fill(numberEpisodes){0.0}
@@ -126,29 +129,63 @@ object TicTacToeLearning {
           i += 1
         }
         var iteration = 0
-        val finalResults : Seq[Double] = Seq.fill(numberEpisodes){0.0}
+        val finalResults1 : Seq[Double] = Seq.fill(numberEpisodes){0.0}
+        val finalResults2 : Seq[Double] = Seq.fill(numberEpisodes){0.0}
         while (iteration < numberIterations) {
           println(s"Iteration ${iteration}/${numberIterations}")
           val results = playTrainingSession(numberEpisodes, tabular, playerXRandom, playerORandom, Parameters.epsilon)
           var i = 0
           for (result <- results) {
-            finalResults(i) = finalResults(i) + result
+            if (plotting == 1) {
+              if (result == 1) {
+                finalResults1(i) = finalResults1(i) + result
+              }
+            }
+            else if (plotting == 2) {
+              if (result == 0) {
+                finalResults1(i) = finalResults1(i) + 1
+              }
+            }
+            else if (plotting == 3) {
+              if (result == 1) {
+                finalResults1(i) = finalResults1(i) + 1
+              }
+              else if (result == -1) {
+                finalResults2(i) = finalResults2(i) + 1
+              }
+            }
             i += 1
           }
           iteration += 1
         }
 
         i = 0
-        for (result <- finalResults) {
-          finalResults(i) = finalResults(i) / numberIterations * 100.0
+        for (result <- finalResults1) {
+          finalResults1(i) = finalResults1(i).toDouble / numberIterations.toDouble * 100.0
+          i += 1
+        }
+        i = 0
+        for (result <- finalResults2) {
+          finalResults2(i) = finalResults2(i).toDouble / numberIterations.toDouble * 100.0
           i += 1
         }
 
         val f = Figure()
         val p = f.subplot(0)
-        p += plot(episodeNumbers, finalResults, '.')
+        if (plotting == 1 || plotting == 2) {
+          p += plot(episodeNumbers, finalResults1, '.')
+        }
+        else if (plotting == 3) {
+          p += plot(episodeNumbers, finalResults1, '.')
+          p += plot(episodeNumbers, finalResults2, '.')
+        }
         p.xlabel = "Episodes"
-        p.ylabel = s"% wins out of ${numberIterations.toInt} iterations"
+        if (plotting == 1 || plotting == 3) {
+          p.ylabel = s"% wins out of ${numberIterations.toInt} iterations"
+        }
+        else {
+          p.ylabel = s"% stalemates out of ${numberIterations.toInt} iterations"
+        }
         p.title = title
         f.saveas(filename)
       }
@@ -170,8 +207,12 @@ object TicTacToeLearning {
 
   def playEpisode(ticTacToeWorld : TicTacToeWorld, epsilon : Double, collectingDataFor : String) : Double = {
     var episodeOutcome = -2.0
-    while (episodeOutcome == -2.0) {
+    while (episodeOutcome == -2.0) { // Train with epsilon
       episodeOutcome = iterateGameStep(ticTacToeWorld, epsilon, None, collectingDataFor)
+    }
+    episodeOutcome = -2.0
+    while (episodeOutcome == -2.0) { // Test run with epsilon = 0
+      episodeOutcome = iterateGameStep(ticTacToeWorld, 0.0, None, collectingDataFor)
     }
     return episodeOutcome
   }
@@ -187,7 +228,7 @@ object TicTacToeLearning {
         returnValue = 1.0
       }
       else if (environment.playerWon(environment.getOtherAgent(ticTacToeWorld.agent1))) {
-        returnValue = 0.0
+        returnValue = -1.0
       }
       else {
         returnValue = 0.0
