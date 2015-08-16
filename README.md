@@ -14,6 +14,7 @@ Build using `sbt`.  On Mac you can install sbt using HomeBrew with `brew install
 ### Gridworld
 - There's no terminal output, but you should see the visualization converge on the optimal solution over time.  Play will never be completely optimal because epsilon is never reduced to 0. 
 - `cd gridworld`
+- `mkdir build`
 - `scalac -d build *.scala`
 - `scala -classpath build GridWorldLearning`
 
