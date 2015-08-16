@@ -11,6 +11,7 @@ Implement a reinforcement learner on the Tic-tac-toe problem that uses a neural 
 Build using `sbt`.  On Mac you can install sbt using HomeBrew with `brew install sbt`.  Then, in the project's directory:
 - `sbt run`
 - Expect to see output in the terminal.  A visualization of the Tic-tac-toe board has been implemented, but it's off by default because it's a huge performance drain.  Turn it on by uncommenting the line `frame.setVisible(true)`. If you want to see the visualization occurring at human pace, open ticTacToe.scala and uncomment the line `Thread.sleep(500)`.  
+
 ### Gridworld
 - There's no terminal output, but you should see the visualization converge on the optimal solution over time.  Play will never be completely optimal because epsilon is never reduced to 0. 
 - `cd gridworld`
