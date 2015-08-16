@@ -266,7 +266,7 @@ class TicTacToeWorld(_agent1Tabular : Boolean, _agent2Tabular : Boolean, agent1R
 
     /** Reset the agent and states for a new episode */
   def endEpisode() {
-    currentPlayer = agent1
+    currentPlayer = agents(nextInt(agents.size))
     debugPrint(s"firstPlayer = ${firstPlayer.name}")
     environment.spaceOwners.resetBoard()
     agent1.previousState = List.fill(9){""}
