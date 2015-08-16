@@ -29,6 +29,7 @@ import debug.DebugUtilities._
 
 case class InvalidParameter(message: String) extends Exception(message)
 case class InvalidCall(message: String) extends Exception(message)
+case class InvalidState(message: String) extends Exception(message)
 
 /** Parameters for the Q value update function and the neural network.  */
 object Parameters {
@@ -359,7 +360,6 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
     return (maxValue, maxValueSpaces(scala.util.Random.nextInt(maxValueSpaces.size))) // Break ties randomly
   }
 
-  case class AskingForActionOnFullBoard(message: String) extends Exception(message)
 
   /** The agent chooses the next action to take. */
   def chooseAction(epsilon : Double, boardState : List[String]) {
@@ -367,7 +367,7 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
       throw new InvalidParameter(s"epsilon = ${epsilon} was passed in, but it only makes sense if it's greater than 0.0 and less than 1.0.")
     }
     if (emptySpaces(boardState).size == 0) {
-      throw new AskingForActionOnFullBoard("The agent was asked to choose an action but there are no empty spaces.  That makes no sense.")
+      throw new InvalidCall("The agent was asked to choose an action but there are no empty spaces.  That makes no sense.")
     }
     if (_random) {
       val prospectiveSpaces = emptySpaces(boardState)
@@ -473,8 +473,6 @@ object EnvironmentUtilities {
 
 class TicTacToeBoard() {
   private var spaceOwners = emptyMutableList()
-  case class CanNotMoveThereException(message: String) extends Exception(message)
-  case class TwoMovesInARow(message: String) extends Exception(message)
   private var previousMarkMove = "" // The mark, X or O, of the last thing that was added to the board
   val uniqueBoardStates = scala.collection.mutable.Map[List[String], Int]()
 
@@ -491,12 +489,12 @@ class TicTacToeBoard() {
       throw new InvalidParameter(s"A player tried to move to space ${space}, which is not a valid space on the Tic-tac-toe board.")
     }
     if (previousMarkMove == newOwner) {
-      throw new TwoMovesInARow(s"${newOwner} tried to make a move on the board, but it was the last player to make a move.  Can't make two moves in a row.")
+      throw new InvalidState(s"${newOwner} tried to make a move on the board, but it was the last player to make a move.  Can't make two moves in a row.")
     }
     previousMarkMove = newOwner
     val existingOwner = spaceOwners(space - 1)
     if (existingOwner != "") {
-      throw new CanNotMoveThereException(s"${newOwner} tried to place someone on space ${space}, but ${existingOwner} is already there.  Board = ${spaceOwners.mkString(", ")}")
+      throw new InvalidCall(s"${newOwner} tried to place someone on space ${space}, but ${existingOwner} is already there.  Board = ${spaceOwners.mkString(", ")}")
     }
     else {
       spaceOwners(space - 1) = newOwner
