@@ -28,6 +28,7 @@ object NeuralNetUtilities {
   }
 }
 
+
 object ActivationFunctions {
   def bipolarSigmoidPrime(input: Double) : Double = {
     return (1 + sigmoid(input)) * (1 - sigmoid(input)) / 2
@@ -53,8 +54,8 @@ object ActivationFunctions {
   def sigmoid(input : Double) : Double = {
     return 1.0 / (1.0 + Math.exp(-input))
   }
-
 }
+
 
 /** A simple neural network with a single input neuron and a single output neuron and a given number of hidden neurons. */
 class NeuralNet(numberInputNeurons : Int , numberHiddenNeurons : Int, learningRate : Double, initialBias : Double) {
