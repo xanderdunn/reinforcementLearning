@@ -1,6 +1,6 @@
-// Learn an agent to play a game of Tic-tac-toe using reinforcement learning with an approximated value function.  
+// Learn an agent to play a game of Tic-tac-toe using reinforcement learning with an approximated value function.
 
-// Convention: The Tic-tac-toe board with size 9 will have its spaces numbered 1 through 9 starting in the top left corner moving right along the row and continuing in the leftmost space on the row below.  
+// Convention: The Tic-tac-toe board with size 9 will have its spaces numbered 1 through 9 starting in the top left corner moving right along the row and continuing in the leftmost space on the row below.
 
 // TODO: Implement SARSA
 // TODO: Implement SARSA(lambda)
@@ -48,6 +48,7 @@ object Parameters {
   val neuralValueLearningAlpha = 1.0/neuralNumberHiddenNeurons // The learning rate used by the value update function
 }
 
+
 object TicTacToeLearning {
   /** Executed to initiate playing Tic-tac-toe with Q-Learning. */
   def main(args: Array[String]) {
@@ -56,7 +57,7 @@ object TicTacToeLearning {
       PlotGenerator.generateLearningCurves()
       System.exit(0)
     }
-    
+
     val frame = new JFrame("Tic Tac Toe")
     frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE)
     frame.setSize(180, 180)
@@ -110,7 +111,7 @@ object TicTacToeLearning {
     def generateLearningCurves() {
       val settings = List((25000, 200, true, false, true, s"Tabular vs. Random Agent, epsilon=${Parameters.epsilon}  alpha=${Parameters.tabularAlpha}", "tabularVrandom.pdf", 1),
                       (50000, 100, false, false, true, s"Neural vs. Random Agent, epsilon=${Parameters.epsilon} learningAlpha=${Parameters.neuralValueLearningAlpha} netAlpha=${Parameters.neuralNetAlpha} gamma=${Parameters.gamma} ${Parameters.neuralNumberHiddenNeurons} hidden neurons ${Parameters.neuralInitialBias} initialBias", "neuralVrandom.pdf", 1),
-                      (4000, 150, true, false, false, s"Tabular vs. Tabular, epsilon=${Parameters.epsilon}  alpha=${Parameters.tabularAlpha}", "tabularVtabular.pdf", 2), 
+                      (4000, 150, true, false, false, s"Tabular vs. Tabular, epsilon=${Parameters.epsilon}  alpha=${Parameters.tabularAlpha}", "tabularVtabular.pdf", 2),
                       (40000, 100, false, false, false, s"Neural vs. Neural, epsilon=${Parameters.epsilon} learningAlpha=${Parameters.neuralValueLearningAlpha} netAlpha=${Parameters.neuralNetAlpha} gamma=${Parameters.gamma} ${Parameters.neuralNumberHiddenNeurons} hidden neurons ${Parameters.neuralInitialBias} initial bias", "neuralVneural.pdf", 3))
 
       for (setting <- settings) {
@@ -191,7 +192,6 @@ object TicTacToeLearning {
         f.saveas(filename)
       }
     }
-
   }
 
   def playTrainingSession(numberEpisodes : Int, tabular : Boolean, playerXRandom : Boolean, playerORandom : Boolean, epsilon : Double) : Seq[Double] = { // Play an entire set of games of training
@@ -248,7 +248,6 @@ object TicTacToeLearning {
     // TODO: Fix the timing such that the end state is visible to the user for a moment.
     //Thread.sleep(500)
   }
-
 }
 
 
@@ -279,7 +278,6 @@ class TicTacToeWorld(_agent1Tabular : Boolean, _agent2Tabular : Boolean, agent1R
     agent2.movedOnce = false
     agent2.newlyOccupiedSpace = 0
   }
-
 }
 
 
@@ -294,7 +292,7 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
     _state = newState
   }
   var newlyOccupiedSpace = 0
-  val stateValues = Map[List[String], Map[Int, Double]]()  // The state-value function is stored in a map with keys that are environment states of the Tic-tac-toe board and values that are arrays of the value of each possible action in this state.  A possible action is any space that is not currently occupied.  
+  val stateValues = Map[List[String], Map[Int, Double]]()  // The state-value function is stored in a map with keys that are environment states of the Tic-tac-toe board and values that are arrays of the value of each possible action in this state.  A possible action is any space that is not currently occupied.
   def tabular = _tabular
   //val neuralNet = new NeuralNet(10, Parameters.neuralNumberHiddenNeurons, Parameters.neuralNetAlpha, Parameters.neuralInitialBias)
   val neuralNets = {
@@ -308,7 +306,7 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
   var movedOnce = false // To know not to update the value function before its first action
 
   /** Convenience method for initializing values for a given state if not already initialized */
-  def getStateValues(state : List[String]) : Map[Int, Double] = { 
+  def getStateValues(state : List[String]) : Map[Int, Double] = {
     if (stateValues.contains(state) == false) { // Initialize the state values to 0
       if (isFullBoard(state) == true) {  // The state values in the stop state are always 0, so always return a map full of zeros
         val zeroMap = Map[Int, Double]()
@@ -408,6 +406,7 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
     return maxValueSpaces(nextInt(maxValueSpaces.size))
   }
 
+
   /** The environment calls this to reward the agent for its action. */
   def reward(reward : Double) {
     if (movedOnce == true && random == false) {
@@ -435,6 +434,7 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
     }
   }
 }
+
 
 /** Static convenience functions for handling the environment. */
 object EnvironmentUtilities {
@@ -470,6 +470,7 @@ object EnvironmentUtilities {
     }
   }
 }
+
 
 class TicTacToeBoard() {
   private var spaceOwners = emptyMutableList()
@@ -513,11 +514,12 @@ class TicTacToeBoard() {
   }
 }
 
+
 /** The environment is responsible for transitioning state and giving reward. */
 class Environment(agent1 : Agent, agent2 : Agent) {
   val size = 3
   var spaceOwners = new TicTacToeBoard()  // Array of each space on the board with the corresponding agent name that is currently occupying the space.  0 if no one is occupying the space.
-  
+
   /** Take a position in the grid and return the left to right number that is the column this position is in. */
   def columnNumber(position : Int) : Int = {
     var column = position % size
@@ -729,5 +731,4 @@ class TicTacToePanel(gridWorld : TicTacToeWorld) extends JPanel {
     drawTicTacToeWorld(graphics)
   }
 }
-
 
