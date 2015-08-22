@@ -54,8 +54,8 @@ object Parameters {
 }
 
 
+/** Executed to initiate playing Tic-tac-toe with Q-Learning. */
 object TicTacToeLearning {
-  /** Executed to initiate playing Tic-tac-toe with Q-Learning. */
   def main(args: Array[String]) {
 
     if (false) { // Set to true if you want to generate graphs instead of initiating single test runs with output in the terminal
