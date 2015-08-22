@@ -75,7 +75,7 @@ object TicTacToeLearning {
     val ticTacToeWorldNeuralNetTabular = new TicTacToeWorld(false, true, false, false)
     val worlds = Array(ticTacToeWorldBothRandom, ticTacToeWorldTabularRandom, ticTacToeWorldNeuralNetRandom, ticTacToeWorldTabularTabular, ticTacToeWorldNeuralNetNeuralNet, ticTacToeWorldNeuralNetTabular)
     var i = 0
-      val agentDescriptions = List("Random vs. Random", "Tabular vs. Random", "Neural vs. Random", "Tabular vs. Tabular", "Neural vs. Neural", "Neural vs. Tabular")
+    val agentDescriptions = List("Random vs. Random", "Tabular vs. Random", "Neural vs. Random", "Tabular vs. Tabular", "Neural vs. Neural", "Neural vs. Tabular")
     for (ticTacToeWorld <- worlds) {
       var numberTrainEpisodes = Parameters.tabularNumberTrainEpisodes
       val numberTestEpisodes = Parameters.numberTestEpisodes
@@ -109,15 +109,15 @@ object TicTacToeLearning {
       println("")
       i += 1
     }
-      System.exit(0)
+    System.exit(0)
   }
 
   object PlotGenerator {
     def generateLearningCurves() {
       val settings = List((25000, 200, true, false, true, s"Tabular vs. Random Agent, epsilon=${Parameters.epsilon}  alpha=${Parameters.tabularAlpha}", "tabularVrandom.pdf", 1),
-                      (50000, 100, false, false, true, s"Neural vs. Random Agent, epsilon=${Parameters.epsilon} learningAlpha=${Parameters.neuralValueLearningAlpha} netAlpha=${Parameters.neuralNetAlpha} gamma=${Parameters.gamma} ${Parameters.neuralNumberHiddenNeurons} hidden neurons ${Parameters.neuralInitialBias} initialBias", "neuralVrandom.pdf", 1),
-                      (4000, 150, true, false, false, s"Tabular vs. Tabular, epsilon=${Parameters.epsilon}  alpha=${Parameters.tabularAlpha}", "tabularVtabular.pdf", 2),
-                      (40000, 100, false, false, false, s"Neural vs. Neural, epsilon=${Parameters.epsilon} learningAlpha=${Parameters.neuralValueLearningAlpha} netAlpha=${Parameters.neuralNetAlpha} gamma=${Parameters.gamma} ${Parameters.neuralNumberHiddenNeurons} hidden neurons ${Parameters.neuralInitialBias} initial bias", "neuralVneural.pdf", 3))
+        (50000, 100, false, false, true, s"Neural vs. Random Agent, epsilon=${Parameters.epsilon} learningAlpha=${Parameters.neuralValueLearningAlpha} netAlpha=${Parameters.neuralNetAlpha} gamma=${Parameters.gamma} ${Parameters.neuralNumberHiddenNeurons} hidden neurons ${Parameters.neuralInitialBias} initialBias", "neuralVrandom.pdf", 1),
+        (4000, 150, true, false, false, s"Tabular vs. Tabular, epsilon=${Parameters.epsilon}  alpha=${Parameters.tabularAlpha}", "tabularVtabular.pdf", 2),
+        (40000, 100, false, false, false, s"Neural vs. Neural, epsilon=${Parameters.epsilon} learningAlpha=${Parameters.neuralValueLearningAlpha} netAlpha=${Parameters.neuralNetAlpha} gamma=${Parameters.gamma} ${Parameters.neuralNumberHiddenNeurons} hidden neurons ${Parameters.neuralInitialBias} initial bias", "neuralVneural.pdf", 3))
 
       for (setting <- settings) {
         val numberEpisodes = setting._1
@@ -208,7 +208,7 @@ object TicTacToeLearning {
       stats(episodeCounter) = playEpisode(ticTacToeWorld, epsilon, "X")
       episodeCounter += 1
     }
-   return stats
+    return stats
   }
 
   def playEpisode(ticTacToeWorld : TicTacToeWorld, epsilon : Double, collectingDataFor : String) : Double = {
@@ -269,7 +269,7 @@ class TicTacToeWorld(_agent1Tabular : Boolean, _agent2Tabular : Boolean, agent1R
   var firstPlayer = agent1
   val xLostStates = scala.collection.mutable.Map[List[String], Int]()
 
-    /** Reset the agent and states for a new episode */
+  /** Reset the agent and states for a new episode */
   def endEpisode() {
     currentPlayer = agents(nextInt(agents.size))
     debugPrint(s"firstPlayer = ${firstPlayer.name}")
