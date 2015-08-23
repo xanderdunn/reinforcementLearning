@@ -1,13 +1,8 @@
-import org.scalatest._
-import collection.mutable.Stack
-import neuralNet._
-import neuralNet.NeuralNetUtilities._
+import org.scalatest.{FlatSpec, Matchers}
+import neuralNet.{NeuralNet}
+import neuralNet.NeuralNetUtilities.neuralNetFeatureVectorForStateAction
 
-abstract class UnitSpec extends FlatSpec with Matchers with
-  OptionValues with Inside with Inspectors
-
-class ExampleSpec extends FlatSpec with Matchers {
-
+class NeuralNetSpec extends FlatSpec with Matchers {
   "A NeuralNet" should "correctly convert a state and action into a featureVector" in {
     var featureVetor = neuralNetFeatureVectorForStateAction(List("X", "", "", "", "", "", "" , "", ""))
     featureVetor should equal (Array(1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0))
@@ -25,34 +20,18 @@ class ExampleSpec extends FlatSpec with Matchers {
       i += 1
     }
     i = 0
-    while (i < 1000) { // Test it works to a degree
+    while (i < 1000) {
       val x = scala.util.Random.nextDouble()
       val y = scala.math.sin(x)
       val result = neuralNet.feedForward(Array(x))
-      var withinRange = false
-      if (result < y + 0.1 && result > y - 0.1) {
-        withinRange = true
-      }
-      else {
-        println(s"x = ${x}")
-        println(s"result = ${result}")
-      }
-      withinRange should equal (true)
+      result should equal (y +- 0.1)
       i += 1
     }
     while (i < 1000) { // Negative test to check that the test itself isn't broken
       val x = scala.util.Random.nextDouble()
       val y = scala.math.sin(x)
       val result = neuralNet.feedForward(Array(x))
-      var withinRange = true
-      if (result < y + 0.01 && result > y - 0.01) {
-        withinRange = false
-      }
-      else {
-        println(s"x = ${x}")
-        println(s"result = ${result}")
-      }
-      withinRange should equal (false)
+      result should not equal (y +- 0.01)
       i += 1
     }
   }
@@ -72,15 +51,7 @@ class ExampleSpec extends FlatSpec with Matchers {
     while (i < 1000) {
       val x = scala.util.Random.nextDouble()
       val result = neuralNet.feedForward(Array(x))
-      var withinRange = false
-      if (result < x + 0.1 && result > x - 0.1) {
-        withinRange = true
-      }
-      else {
-        println(s"x = ${x}")
-        println(s"result = ${result}")
-      }
-      withinRange should equal (true)
+      result should equal (x +- 0.1)
       i += 1
     }
   }
