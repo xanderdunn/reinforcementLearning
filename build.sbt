@@ -1,5 +1,6 @@
   name := "ticTacToe"
   version := "1.0"
+  scalaVersion := "2.11.7"
   libraryDependencies  ++= Seq(
     // other dependencies here
     "org.scalanlp" %% "breeze" % "0.11.2",
@@ -19,5 +20,3 @@
     "Sonatype Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots/",
     "Sonatype Releases" at "https://oss.sonatype.org/content/repositories/releases/"
   )
-  mainClass in (Compile,run) := Some("TicTacToeLearning")
-  scalaVersion := "2.11.7"
