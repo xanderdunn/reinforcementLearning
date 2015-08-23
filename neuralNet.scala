@@ -1,5 +1,5 @@
-import scala.collection.mutable._
-import scala.util.Random._
+import scala.collection.mutable.ArrayBuffer
+import scala.util.Random.nextDouble
 
 package neuralNet {
 
@@ -159,7 +159,7 @@ class Neuron(_isBiasNeuon : Boolean, initialBias : Double) {
   if (isBiasNeuron) {
     _sum = initialBias
   }
-  
+
   /* This is called externally when something has changed so that this neuron's value needs to be updated. */
   def updateOutput() {
     if (isBiasNeuron == false) { // Bias neurons have no calculations to perform
