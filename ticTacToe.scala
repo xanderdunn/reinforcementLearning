@@ -411,13 +411,25 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
     return maxValueSpaces(nextInt(maxValueSpaces.size))
   }
 
+  def sanityCheckReward(reward : Double) {
+    if (newlyOccupiedSpace == 0) {
+      throw new InvalidCall(s"An attempt was made to give reward to ${name} while its previous action is ${newlyOccupiedSpace}. A player must move at least once to be rewarded for it.")
+    }
+    val previousAndCurrentStateDifferences = differenceBetweenBoards(previousState, state)
+    if (isFullBoard(state) == false) {
+      if (previousAndCurrentStateDifferences.size != 2 || !previousAndCurrentStateDifferences.contains("X") || !previousAndCurrentStateDifferences.contains("O")) {
+        if (reward == 0.0) {
+          throw new InvalidState(s"${name} is being given reward ${reward} for moving from ${previousState} ${state}, however this should not happen.  An agent should be rewarded after not only it has made a move, but also its opponent has made a move.")
+        }
+      }
+    }
+  }
+
 
   /** The environment calls this to reward the agent for its action. */
   def reward(reward : Double) {
     if (movedOnce == true && random == false) {
-      if (newlyOccupiedSpace == 0) {
-        throw new InvalidCall(s"An attempt was made to give reward to ${name} while its previous action is ${newlyOccupiedSpace}. A player must move at least once to be rewarded for it.")
-      }
+      sanityCheckReward(reward)
       debugPrint(s"Give reward ${reward} to ${name} moving from ${previousState} to ${state}")
       if (tabular) {
         // Make sure they're initialized
@@ -462,6 +474,20 @@ object EnvironmentUtilities {
     return spaceOwners.zipWithIndex.collect {
       case (element, index) if element == "" => index + 1
     }
+  }
+
+  /** Compares two boards and returns the values in boardState2 that are different from boardState1 */
+  def differenceBetweenBoards(boardState1 : List[String], boardState2 : List[String]) : List[String] = {
+    var i = 0
+    val differences = MutableList[String]()
+    for (board1Position <- boardState1) {
+      val board2Position = boardState2(i)
+      if (board1Position != board2Position) {
+        differences += board2Position
+      }
+      i += 1
+    }
+    return differences.toList
   }
 
   /** The board is full if all spaces are taken by some agent.  This is used with isWinningBoard() to determine a stalemate. */
