@@ -5,7 +5,7 @@
 // TODO: Add exceptions to test sanity.  Add an exception to test that each agent is rewarded the correct number of times for each episode.
 // TODO: Implement a switch to turn off learning altogether, not merely exploration
 // TODO: Figure out why a player starting first matters for learning covergence
-// TODO: Figure out a way to automatically test the converge of Q values for certain states
+// TODO: Figure out a way to automatically test the convergance of Q values for certain states
 // TODO: Use a single neural network for each Agent
 // TODO: Use a single neural network for both Agents
 // TODO: Implement SARSA
@@ -21,95 +21,77 @@ import java.awt.RenderingHints
 import javax.swing.JFrame
 import javax.swing.JPanel
 import scala.math
-import scala.util.Random._
-import scala.collection.mutable._
+import scala.util.Random.{nextInt, nextDouble}
+import scala.collection.mutable.{ArrayBuffer, Seq, IndexedSeq, MutableList, Map}
 // Third Party, for Plotting
 import breeze.linalg._
 import breeze.plot._
 // Custom
 import neuralNet._
 import neuralNet.NeuralNetUtilities._
-import EnvironmentUtilities._
+import ticTacToe.EnvironmentUtilities._
 import debug.DebugUtilities._
 
+package ticTacToe {
+
+// Exception types
+// TODO: Convert these over to Java standard exceptions: http://www.tutorialspoint.com/java/java_builtin_exceptions.htm
 case class InvalidParameter(message: String) extends Exception(message)
 case class InvalidCall(message: String) extends Exception(message)
 case class InvalidState(message: String) extends Exception(message)
 
-/** Parameters for the Q value update function and the neural network.  */
+
+/** Parameters for the Q value update function and the neural network. */
 object Parameters {
   // Tabular Parameters
   val tabularAlpha = 0.1
-  val tabularNumberTrainEpisodes = 50000
   // Both
   val epsilon = 0.2
-  val numberTestEpisodes = 20000
   val gamma = 0.99 // discount rate
   // Neural Net Parameters
-  val neuralNumberTrainEpisodes = 200000
   val neuralNetAlpha = 0.5             // The learning rate in the neural net itself
   val neuralInitialBias = 0.33  // This is in the range [0, f(n)] where n is the number of input neurons and f(x) = 1/sqrt(n).   See here: http://neuralnetworksanddeeplearning.com/chap3.html#weight_initialization
   val neuralNumberHiddenNeurons = 40
   val neuralValueLearningAlpha = 1.0/neuralNumberHiddenNeurons // The learning rate used by the value update function
 }
 
+class GameParameters {
+  var agent1Tabular = true
+  var agent2Tabular = true
+  var agent1Random = true
+  var agent2Random = true
+  var numberTrainEpisodes = 50000
+  var numberTestEpisodes = 20000
+}
 
-/** Executed to initiate playing Tic-tac-toe with Q-Learning. */
-object TicTacToeLearning {
-  def main(args: Array[String]) {
-
-    if (false) { // Set to true if you want to generate graphs instead of initiating single test runs with output in the terminal
-      PlotGenerator.generateLearningCurves()
+/** Executed to initiate playing and learning Tic-tac-toe. */
+class TicTacToeLearning(generateGraph : Boolean, gameParameters : GameParameters) {
+  /** The go button.  Actually initiates game play and learning until the ultimate goal is achieved: Generate a graph or return results in the form (# games X won, # games O won, # stalemates, # total games, # unique board states encountered). */
+  def learn() : (Double, Double, Double, Double, Int) = {
+    if (generateGraph) { // Set to true if you want to generate graphs instead of initiating single test runs with output in the terminal
+      PlotGenerator.generateLearningCurves() // TODO: Use the below code path rather than a separate code path for collecting data to plot on this run.
       System.exit(0)
     }
 
+    val ticTacToeWorld = new TicTacToeWorld(gameParameters.agent1Tabular, gameParameters.agent2Tabular, gameParameters.agent1Random, gameParameters.agent2Random)
+    val environment = ticTacToeWorld.environment
+
+    // GUI window to visaulize the Tic-tac-toe game
     val frame = new JFrame("Tic Tac Toe")
     frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE)
     frame.setSize(180, 180)
+    frame.setContentPane(ticTacToeWorld.ticTacToePanel)
+    // frame.setVisible(true)
 
-    val ticTacToeWorldBothRandom = new TicTacToeWorld(true, true, true, true)
-    val ticTacToeWorldTabularRandom = new TicTacToeWorld(true, true, false, true)
-    val ticTacToeWorldNeuralNetRandom = new TicTacToeWorld(false, false, false, true)
-    val ticTacToeWorldTabularTabular = new TicTacToeWorld(true, true, false, false)
-    val ticTacToeWorldNeuralNetNeuralNet = new TicTacToeWorld(false, false, false, false)
-    val ticTacToeWorldNeuralNetTabular = new TicTacToeWorld(false, true, false, false)
-    val worlds = Array(ticTacToeWorldBothRandom, ticTacToeWorldTabularRandom, ticTacToeWorldNeuralNetRandom, ticTacToeWorldTabularTabular, ticTacToeWorldNeuralNetNeuralNet, ticTacToeWorldNeuralNetTabular)
-    var i = 0
-    val agentDescriptions = List("Random vs. Random", "Tabular vs. Random", "Neural vs. Random", "Tabular vs. Tabular", "Neural vs. Neural", "Neural vs. Tabular")
-    for (ticTacToeWorld <- worlds) {
-      var numberTrainEpisodes = Parameters.tabularNumberTrainEpisodes
-      val numberTestEpisodes = Parameters.numberTestEpisodes
-      if (ticTacToeWorld.agent1Tabular != true) {
-        numberTrainEpisodes = Parameters.neuralNumberTrainEpisodes
-      }
-      if (i == 0) {
-        println(s"=== ${agentDescriptions(i)}")
-      }
-      else {
-        println(s"=== ${agentDescriptions(i)} epsilon=${Parameters.epsilon} learningAlpha=${Parameters.neuralValueLearningAlpha} netAlpha=${Parameters.neuralNetAlpha} gamma=${Parameters.gamma} numberHiddenNeurons=${Parameters.neuralNumberHiddenNeurons} initialBias=${Parameters.neuralInitialBias}")
-      }
-      frame.setContentPane(ticTacToeWorld.ticTacToePanel)
-      //frame.setVisible(true)
-      val environment = ticTacToeWorld.environment
-
-      println(s"Training ${numberTrainEpisodes} episodes.")
-      while (environment.totalGames < numberTrainEpisodes) {
-        playEpisode(ticTacToeWorld, Parameters.epsilon, "")
-      }
-      environment.resetGameStats()
-      println(s"Testing the trained Q-Learner against ${numberTestEpisodes} games.  Exploration is disabled.")
-      while (environment.totalGames < numberTestEpisodes) {
-        playEpisode(ticTacToeWorld, 0.0, "")
-      }
-      val uniqueBoardStates = ticTacToeWorld.environment.spaceOwners.uniqueBoardStates
-      println(s"${uniqueBoardStates.size} unique board states hit")
-      println(s"Player X won ${environment.xWins / environment.totalGames * 100}% of ${numberTestEpisodes} test games.")
-      println(s"Player O won ${environment.oWins} of the ${numberTestEpisodes} test games.")
-      println(s"${environment.stalemates} of the ${numberTestEpisodes} test games were stalemates.")
-      println("")
-      i += 1
+    while (environment.totalGames < gameParameters.numberTrainEpisodes) {
+      playEpisode(ticTacToeWorld, Parameters.epsilon, "")
     }
-    System.exit(0)
+    environment.resetGameStats()
+    while (environment.totalGames < gameParameters.numberTestEpisodes) {
+      playEpisode(ticTacToeWorld, 0.0, "")
+    }
+    val uniqueBoardStates = ticTacToeWorld.environment.spaceOwners.uniqueBoardStates
+    (environment.xWins, environment.oWins, environment.stalemates, environment.totalGames, uniqueBoardStates.size)
   }
 
   object PlotGenerator {
@@ -199,7 +181,9 @@ object TicTacToeLearning {
     }
   }
 
-  def playTrainingSession(numberEpisodes : Int, tabular : Boolean, playerXRandom : Boolean, playerORandom : Boolean, epsilon : Double) : Seq[Double] = { // Play an entire set of games of training
+  /**  Play a set of episodes for training. */
+  // TODO: This can be removed entirely by absorbing it into the learn() method above when the generateGraph boolean is set
+  def playTrainingSession(numberEpisodes : Int, tabular : Boolean, playerXRandom : Boolean, playerORandom : Boolean, epsilon : Double) : Seq[Double] = {
     println(s"Playing a training session with ${numberEpisodes} episodes")
     val stats : IndexedSeq[Double] = IndexedSeq.fill(numberEpisodes){0.0}
     var episodeCounter = 0
@@ -223,8 +207,8 @@ object TicTacToeLearning {
     return episodeOutcome
   }
 
-  /** Take one step in the game: The player takes an action, the other player responds, and the board hands out reward. */
-  def iterateGameStep(ticTacToeWorld : TicTacToeWorld, epsilon : Double, frame : Option[JFrame], collectingDataFor : String) : Double = {  // If you're collecting data, pass in the string "X" or "O" for the player whose data you're interested in.  This method returns 1 if that player won this episode, -1 if it lost, 0 if it was a stalemate, and -2 if the episode hasn't ended.
+  /** Take one step in the game: The player takes an action, the other player responds, and the board hands out reward to both players.  If you're collecting data for a graph, pass in the string "X" or "O" for the player whose data you're interested in.  This method returns 1 if that player won this episode, -1 if it lost, 0 if it was a stalemate, and -2 if the episode hasn't ended. */
+  def iterateGameStep(ticTacToeWorld : TicTacToeWorld, epsilon : Double, frame : Option[JFrame], collectingDataFor : String) : Double = {
     val agent = ticTacToeWorld.currentPlayer
     val environment = ticTacToeWorld.environment
     environment.applyAction(agent, epsilon)
@@ -286,7 +270,7 @@ class TicTacToeWorld(_agent1Tabular : Boolean, _agent2Tabular : Boolean, agent1R
 }
 
 
-/** The agent object who makes decisions on where to places X's and O's.  Because there are two players, players are identified by an integer value.*/
+/** The agent object who makes decisions on where to places X's and O's.  Because there are two players, players are identified by an integer value. */
 class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
   val name = _name
   private var _state : List[String] = List.fill(9){""}
@@ -763,3 +747,4 @@ class TicTacToePanel(gridWorld : TicTacToeWorld) extends JPanel {
   }
 }
 
+}
