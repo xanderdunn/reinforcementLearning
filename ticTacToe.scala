@@ -65,7 +65,7 @@ class GameParameters {
 }
 
 /** Executed to initiate playing and learning Tic-tac-toe. */
-class TicTacToeLearning(generateGraph : Boolean, gameParameters : GameParameters) {
+class TicTacToeLearning(generateGraph : Boolean, gameParameters : GameParameters, showVisual : Boolean = false) {
   /** The go button.  Actually initiates game play and learning until the ultimate goal is achieved: Generate a graph or return results in the form (# games X won, # games O won, # stalemates, # total games, # unique board states encountered). */
   def learn() : (Double, Double, Double, Double, Int) = {
     if (generateGraph) { // Set to true if you want to generate graphs instead of initiating single test runs with output in the terminal
@@ -77,11 +77,13 @@ class TicTacToeLearning(generateGraph : Boolean, gameParameters : GameParameters
     val environment = ticTacToeWorld.environment
 
     // GUI window to visaulize the Tic-tac-toe game
-    val frame = new JFrame("Tic Tac Toe")
-    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE)
-    frame.setSize(180, 180)
-    frame.setContentPane(ticTacToeWorld.ticTacToePanel)
-    // frame.setVisible(true)
+    if (showVisual) {
+      val frame = new JFrame("Tic Tac Toe")
+      frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE)
+      frame.setSize(180, 180)
+      frame.setContentPane(ticTacToeWorld.ticTacToePanel)
+      frame.setVisible(true)
+    }
 
     while (environment.totalGames < gameParameters.numberTrainEpisodes) {
       playEpisode(ticTacToeWorld, Parameters.epsilon, "")
