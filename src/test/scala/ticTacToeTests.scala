@@ -60,19 +60,19 @@ class TicTacToeSpec extends FlatSpec with Matchers {
     results._5 should be > (7500)
   }
 
-  it should "have greater than 90% stalemates for Neural vs. Neural" in {
-    val gameParameters = new GameParameters()
-    gameParameters.agent1Random = false
-    gameParameters.agent1Tabular = false
-    gameParameters.agent2Random = false
-    gameParameters.agent2Tabular = false
-    gameParameters.numberTrainEpisodes = 100000
-    val ticTacToeLearning = new TicTacToeLearning(false, gameParameters)
-    val results = ticTacToeLearning.learn()
-    val stalematesRatio = results._3 / results._4
-    stalematesRatio should be > (0.90)
-    info(s"${stalematesRatio * 100.0}% of games were stalemates")
-    results._4 should equal (20000.0)
-    results._5 should be > (7500)
-  }
+  //it should "have greater than 90% stalemates for Neural vs. Neural" in {
+    //val gameParameters = new GameParameters()
+    //gameParameters.agent1Random = false
+    //gameParameters.agent1Tabular = false
+    //gameParameters.agent2Random = false
+    //gameParameters.agent2Tabular = false
+    //gameParameters.numberTrainEpisodes = 100000
+    //val ticTacToeLearning = new TicTacToeLearning(false, gameParameters)
+    //val results = ticTacToeLearning.learn()
+    //val stalematesRatio = results._3 / results._4
+    //stalematesRatio should be > (0.90)
+    //info(s"${stalematesRatio * 100.0}% of games were stalemates")
+    //results._4 should equal (20000.0)
+    //results._5 should be > (7500)
+  //}
 }
