@@ -260,14 +260,14 @@ class TicTacToeWorld(_agent1Tabular : Boolean, _agent2Tabular : Boolean, agent1R
     currentPlayer = agents(nextInt(agents.size))
     debugPrint(s"firstPlayer = ${firstPlayer.name}")
     environment.spaceOwners.resetBoard()
-    agent1.previousState = List.fill(9){""}
-    agent1.state = List.fill(9){""}
+    agent1.s = List.fill(9){""}
+    agent1.sp1 = List.fill(9){""}
     agent1.movedOnce = false
-    agent1.newlyOccupiedSpace = 0
-    agent2.previousState = List.fill(9){""}
-    agent2.state = List.fill(9){""}
+    agent1.a = 0
+    agent2.s = List.fill(9){""}
+    agent2.sp1 = List.fill(9){""}
     agent2.movedOnce = false
-    agent2.newlyOccupiedSpace = 0
+    agent2.a = 0
   }
 }
 
@@ -275,14 +275,14 @@ class TicTacToeWorld(_agent1Tabular : Boolean, _agent2Tabular : Boolean, agent1R
 /** The agent object who makes decisions on where to places X's and O's.  Because there are two players, players are identified by an integer value. */
 class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
   val name = _name
-  private var _state : List[String] = List.fill(9){""}
-  var previousState = List.fill(9){""}
-  def state = _state
-  def state_=(newState : List[String]): Unit = {
-    previousState = _state
-    _state = newState
+  private var _sp1 : List[String] = List.fill(9){""}
+  var s = List.fill(9){""}
+  def sp1 = _sp1
+  def sp1_=(newState : List[String]): Unit = {
+    s = _sp1
+    _sp1 = newState
   }
-  var newlyOccupiedSpace = 0
+  var a = 0
   val stateValues = Map[List[String], Map[Int, Double]]()  // The state-value function is stored in a map with keys that are environment states of the Tic-tac-toe board and values that are arrays of the value of each possible action in this state.  A possible action is any space that is not currently occupied.
   def tabular = _tabular
   //val neuralNet = new NeuralNet(10, Parameters.neuralNumberHiddenNeurons, Parameters.neuralNetAlpha, Parameters.neuralInitialBias)
@@ -360,21 +360,21 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
     }
     if (_random) {
       val prospectiveSpaces = emptySpaces(boardState)
-      newlyOccupiedSpace = prospectiveSpaces(nextInt(prospectiveSpaces.size))
+      a = prospectiveSpaces(nextInt(prospectiveSpaces.size))
     }
     else {
       val randomHundred = nextInt(100)
       if (randomHundred <= (100 - (epsilon * 100.0) - 1)) { // Exploit: Choose the greedy action and break ties randomly
         if (tabular == true) {
-          newlyOccupiedSpace = tabularGreedyAction(boardState)
+          a = tabularGreedyAction(boardState)
         }
         else {
-          newlyOccupiedSpace = neuralNetGreedyAction(boardState)
+          a = neuralNetGreedyAction(boardState)
         }
       }
       else { // Explore: Randomly choose an action
         val prospectiveSpaces = emptySpaces(boardState)
-        newlyOccupiedSpace = prospectiveSpaces(nextInt(prospectiveSpaces.size))
+        a = prospectiveSpaces(nextInt(prospectiveSpaces.size))
       }
     }
   }
@@ -398,14 +398,14 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
   }
 
   def sanityCheckReward(reward : Double) {
-    if (newlyOccupiedSpace == 0) {
-      throw new InvalidCall(s"An attempt was made to give reward to ${name} while its previous action is ${newlyOccupiedSpace}. A player must move at least once to be rewarded for it.")
+    if (a == 0) {
+      throw new InvalidCall(s"An attempt was made to give reward to ${name} while its previous action is ${a}. A player must move at least once to be rewarded for it.")
     }
-    val previousAndCurrentStateDifferences = differenceBetweenBoards(previousState, state)
-    if (isFullBoard(state) == false) {
+    val previousAndCurrentStateDifferences = differenceBetweenBoards(s, sp1)
+    if (isFullBoard(sp1) == false) {
       if (previousAndCurrentStateDifferences.size != 2 || !previousAndCurrentStateDifferences.contains("X") || !previousAndCurrentStateDifferences.contains("O")) {
         if (reward == 0.0) {
-          throw new InvalidState(s"${name} is being given reward ${reward} for moving from ${previousState} ${state}, however this should not happen.  An agent should be rewarded after not only it has made a move, but also its opponent has made a move.")
+          throw new InvalidState(s"${name} is being given reward ${reward} for moving from ${s} ${sp1}")
         }
       }
     }
@@ -416,23 +416,25 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
   def reward(reward : Double) {
     if (movedOnce == true && random == false) {
       sanityCheckReward(reward)
-      debugPrint(s"Give reward ${reward} to ${name} moving from ${previousState} to ${state}")
+      debugPrint(s"Give reward ${reward} to ${name} moving from ${s} to ${sp1}")
       if (tabular) {
         // Make sure they're initialized
-        getStateValues(previousState)
-        getStateValues(state)
-        val updateValue = (Parameters.tabularAlpha)*((reward + stateValues(state).maxBy(_._2)._2) - stateValues(previousState)(newlyOccupiedSpace)) // Q-Learning
-        stateValues(previousState)(newlyOccupiedSpace) += updateValue
+        getStateValues(s)
+        getStateValues(sp1)
+        val updateValue = (Parameters.tabularAlpha)*((reward + stateValues(sp1).maxBy(_._2)._2) - stateValues(s)(a)) // Q-Learning
+        stateValues(s)(a) += updateValue
       }
       else {
-        debugPrint(s"Updating ${name}'s neural net for making the move ${newlyOccupiedSpace} from the state ${previousState}")
-        val previousStateFeatureVector = neuralNetFeatureVectorForStateAction(previousState)
-        val previousStateValue = neuralNets(newlyOccupiedSpace).feedForward(previousStateFeatureVector)
-        val stateMaxValue = maxNeuralNetValueAndActionForState(state)._1
+        debugPrint(s"Updating ${name}'s neural net for making the move ${a} from the state ${s}")
+        val previousStateFeatureVector = neuralNetFeatureVectorForStateAction(s)
+        val previousStateValue = neuralNets(a).feedForward(previousStateFeatureVector)
+        val nextActionValue = neuralNets(a).feedForward(previousStateFeatureVector)
+        // Q Learning
+        val stateMaxValue = maxNeuralNetValueAndActionForState(sp1)._1
         val targetValue = previousStateValue + Parameters.neuralValueLearningAlpha * (reward + Parameters.gamma * stateMaxValue - previousStateValue)  // q(s,a) = q(s,a) + learningrate * (reward + discountRate * max_a(q(s_(t+1),a)) - q(s,a))
-        neuralNets(newlyOccupiedSpace).train(previousStateFeatureVector, targetValue)
+        neuralNets(a).train(previousStateFeatureVector, targetValue)
         debugPrint(s"Updated player ${name}'s neural net for ${previousStateFeatureVector.mkString(", ")} with reward ${reward} and targetValue ${targetValue}")
-        val previousStateValueUpdated = neuralNets(newlyOccupiedSpace).feedForward(previousStateFeatureVector)
+        val previousStateValueUpdated = neuralNets(a).feedForward(previousStateFeatureVector)
       }
     }
   }
@@ -651,8 +653,8 @@ class Environment(agent1 : Agent, agent2 : Agent) {
   def applyAction(agent : Agent, epsilon : Double) {
     giveReward(agent) // For this agent's previous move that wasn't rewarded yet because the subsequent player's move could have put it into an end state
     agent.chooseAction(epsilon, spaceOwners.getList())
-    spaceOwners.setSpaceOwner(agent.newlyOccupiedSpace, agent.name) // Take the space chosen by the agent
-    debugPrint(s"${agent.name} moved to space ${agent.newlyOccupiedSpace}")
+    spaceOwners.setSpaceOwner(agent.a, agent.name) // Take the space chosen by the agent
+    debugPrint(s"${agent.name} moved to space ${agent.a}")
     val otherPlayer = getOtherAgent(agent)
     if (isEndState() == true) {
       giveReward(agent)
@@ -682,7 +684,7 @@ class Environment(agent1 : Agent, agent2 : Agent) {
 
   /** Update the agent's state and give it a reward for its ation. Return 1 if this is the end of the episode, 0 otherwise. */
   def giveReward(agent : Agent) {
-    agent.state = spaceOwners.getList()
+    agent.sp1 = spaceOwners.getList()
     if (playerWon(agent) == true) {
       agent.reward(1.0)
     }
