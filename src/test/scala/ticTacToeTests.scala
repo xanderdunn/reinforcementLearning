@@ -59,6 +59,7 @@ class TicTacToeSpec extends FlatSpec with Matchers with ParallelTestExecution {
     stalematesRatio should be > (0.93)
     info(s"${stalematesRatio * 100.0}% of games were stalemates")
     results._4 should equal (20000.0)
+    results._5 should be > (7450)
     results._5 should be > (7500)
   }
 
