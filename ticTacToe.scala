@@ -27,10 +27,10 @@ import scala.collection.mutable.{ArrayBuffer, Seq, IndexedSeq, MutableList, Map}
 import breeze.linalg._
 import breeze.plot._
 // Custom
-import neuralNet._
+import neuralNet.NeuralNet
 import neuralNet.NeuralNetUtilities._
 import ticTacToe.EnvironmentUtilities._
-import debug.DebugUtilities._
+import debug.DebugUtilities.debugPrint
 
 package ticTacToe {
 
