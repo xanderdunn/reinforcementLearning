@@ -14,8 +14,8 @@ class TicTacToeSpec extends FlatSpec with Matchers {
     for (parameters <- gameParameters) {
       val ticTacToeLearning = new TicTacToeLearning(false, parameters)
       val results = ticTacToeLearning.learn()
-      results._1 / results._4 should equal (0.43 +- 0.015)
-      results._2 / results._4 should equal (0.43 +- 0.015)
+      results._1 / results._4 should equal (0.43 +- 0.02)
+      results._2 / results._4 should equal (0.43 +- 0.02)
       results._3 / results._4 should equal (0.14 +- 0.02)
       results._4 should equal (20000.0)
       results._5 should be > (8000)
@@ -44,17 +44,17 @@ class TicTacToeSpec extends FlatSpec with Matchers {
     xWinRatio should be > (0.80)
     info(s"X won ${xWinRatio * 100.0}% of games")
     results._4 should equal (20000.0)
-    results._5 should be > (6000)
+    results._5 should be > (5900)
   }
 
-  it should "have greater than 94% stalemates for Tabular vs. Tabular" in {
+  it should "have greater than 93.5% stalemates for Tabular vs. Tabular" in {
     val gameParameters = new GameParameters()
     gameParameters.agent1Random = false
     gameParameters.agent2Random = false
     val ticTacToeLearning = new TicTacToeLearning(false, gameParameters)
     val results = ticTacToeLearning.learn()
     val stalematesRatio = results._3 / results._4
-    stalematesRatio should be > (0.94)
+    stalematesRatio should be > (0.935)
     info(s"${stalematesRatio * 100.0}% of games were stalemates")
     results._4 should equal (20000.0)
     results._5 should be > (7500)
