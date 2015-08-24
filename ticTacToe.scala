@@ -703,7 +703,7 @@ class Environment(agent1 : Agent, agent2 : Agent) {
     else if (otherPlayerWon(agent) == true) {
       agent.reward(-1.0)
     }
-    else if (isFullBoard(spaceOwners.getList()) == true) {
+    else if (isFullBoard(spaceOwners.getList()) == true) { // Stalemate
       agent.reward(0.0)
     }
     else {
