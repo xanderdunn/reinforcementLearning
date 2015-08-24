@@ -411,6 +411,15 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
     }
   }
 
+  def sanityCheckValueUpdate(reward : Double, previousValue : Double, updatedValue : Double) {
+    if (reward > 0.0 && updatedValue - previousValue < 0.0) {
+      throw new InvalidState(s"Player ${name} received a reward of ${reward} and the state value was updated from ${previousValue} ${updatedValue}.  A positive increase was expected.")
+    }
+    else if (reward < 0.0 && previousValue - updatedValue < 0.0) {
+      throw new InvalidState(s"Player ${name} received a reward of ${reward} and the state value was updated from ${previousValue} ${updatedValue}.  A positive increase was expected.")
+    }
+  }
+
 
   /** The environment calls this to reward the agent for its action. */
   def reward(reward : Double) {
@@ -421,8 +430,10 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
         // Make sure they're initialized
         getStateValues(s)
         getStateValues(sp1)
+        val previousStateValue = stateValues(s)(a)
         val updateValue = (Parameters.tabularAlpha)*((reward + stateValues(sp1).maxBy(_._2)._2) - stateValues(s)(a)) // Q-Learning
         stateValues(s)(a) += updateValue
+        sanityCheckValueUpdate(reward, previousStateValue, stateValues(s)(a))
       }
       else {
         debugPrint(s"Updating ${name}'s neural net for making the move ${a} from the state ${s}")
@@ -435,6 +446,7 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
         neuralNets(a).train(previousStateFeatureVector, targetValue)
         debugPrint(s"Updated player ${name}'s neural net for ${previousStateFeatureVector.mkString(", ")} with reward ${reward} and targetValue ${targetValue}")
         val previousStateValueUpdated = neuralNets(a).feedForward(previousStateFeatureVector)
+        sanityCheckValueUpdate(reward, previousStateValue, previousStateValueUpdated)
       }
     }
   }
