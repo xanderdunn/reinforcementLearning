@@ -429,7 +429,7 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
         val previousStateFeatureVector = neuralNetFeatureVectorForStateAction(previousState)
         val previousStateValue = neuralNets(newlyOccupiedSpace).feedForward(previousStateFeatureVector)
         val stateMaxValue = maxNeuralNetValueAndActionForState(state)._1
-        val targetValue = previousStateValue + Parameters.neuralValueLearningAlpha * (reward + Parameters.gamma * stateMaxValue - previousStateValue)  // q(s,a) + learningrate * (reward + discountRate * q'(s,a) - q(s,a))
+        val targetValue = previousStateValue + Parameters.neuralValueLearningAlpha * (reward + Parameters.gamma * stateMaxValue - previousStateValue)  // q(s,a) = q(s,a) + learningrate * (reward + discountRate * max_a(q(s_(t+1),a)) - q(s,a))
         neuralNets(newlyOccupiedSpace).train(previousStateFeatureVector, targetValue)
         debugPrint(s"Updated player ${name}'s neural net for ${previousStateFeatureVector.mkString(", ")} with reward ${reward} and targetValue ${targetValue}")
         val previousStateValueUpdated = neuralNets(newlyOccupiedSpace).feedForward(previousStateFeatureVector)
