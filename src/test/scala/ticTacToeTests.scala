@@ -22,7 +22,8 @@ class TicTacToeSpec extends FlatSpec with Matchers with ParallelTestExecution {
     }
   }
 
-  it should "have greater than 87% X wins for Tabular vs. Random" in {
+  var minimum = 0.87
+  it should s"have greater than ${minimum*100}% X wins for Tabular vs. Random" in {
     val gameParameters = new GameParameters()
     gameParameters.agent1Random = false
     val ticTacToeLearning = new TicTacToeLearning(false, gameParameters)
@@ -34,7 +35,8 @@ class TicTacToeSpec extends FlatSpec with Matchers with ParallelTestExecution {
     results._5 should be > (7500)
   }
 
-  it should "have greater than 80% X wins for Neural Net vs. Random" in {
+  minimum = 0.80
+  it should s"have greater than ${minimum*100}% X wins for Neural Net vs. Random" in {
     val gameParameters = new GameParameters()
     gameParameters.agent1Random = false
     gameParameters.agent1Tabular = false
@@ -47,7 +49,8 @@ class TicTacToeSpec extends FlatSpec with Matchers with ParallelTestExecution {
     results._5 should be > (5900)
   }
 
-  it should "have greater than 93.5% stalemates for Tabular vs. Tabular" in {
+  minimum = 0.93
+  it should s"have greater than ${minimum*100}% stalemates for Tabular vs. Tabular" in {
     val gameParameters = new GameParameters()
     gameParameters.agent1Random = false
     gameParameters.agent2Random = false
