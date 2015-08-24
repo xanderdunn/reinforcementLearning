@@ -1,8 +1,8 @@
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.{FlatSpec, Matchers, ParallelTestExecution}
 import neuralNet.{NeuralNet}
 import neuralNet.NeuralNetUtilities.neuralNetFeatureVectorForStateAction
 
-class NeuralNetSpec extends FlatSpec with Matchers {
+class NeuralNetSpec extends FlatSpec with Matchers with ParallelTestExecution {
   "A NeuralNet" should "correctly convert a state and action into a featureVector" in {
     var featureVetor = neuralNetFeatureVectorForStateAction(List("X", "", "", "", "", "", "" , "", ""))
     featureVetor should equal (Array(1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0))
