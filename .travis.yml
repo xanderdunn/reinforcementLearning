@@ -9,3 +9,8 @@ notifications:
 branches:
     only:
         - master
+
+script:
+  - sbt ++$TRAVIS_SCALA_VERSION test:compile
+  - CP=$(sbt "export test:dependency-classpath" --error)
+  - java -cp $CP org.scalatest.tools.Runner -R target/scala-2.11/test-classes -o -PS3
