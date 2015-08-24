@@ -54,7 +54,7 @@ class TicTacToeSpec extends FlatSpec with Matchers with ParallelTestExecution {
     val ticTacToeLearning = new TicTacToeLearning(false, gameParameters)
     val results = ticTacToeLearning.learn()
     val stalematesRatio = results._3 / results._4
-    stalematesRatio should be > (0.935)
+    stalematesRatio should be > (0.93)
     info(s"${stalematesRatio * 100.0}% of games were stalemates")
     results._4 should equal (20000.0)
     results._5 should be > (7500)
