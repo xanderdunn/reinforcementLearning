@@ -2,17 +2,6 @@
 
 // Convention: The Tic-tac-toe board with size 9 will have its spaces numbered 1 through 9 starting in the top left corner moving right along the row and continuing in the leftmost space on the row below.
 
-// TODO: Add exceptions to test sanity.  Add an exception to test that each agent is rewarded the correct number of times for each episode.
-// TODO: Implement a switch to turn off learning altogether, not merely exploration
-// TODO: Figure out why a player starting first matters for learning covergence
-// TODO: Figure out a way to automatically test the convergance of Q values for certain states
-// TODO: Use a single neural network for each Agent
-// TODO: Use a single neural network for both Agents
-// TODO: Implement SARSA
-// TODO: Implement SARSA(lambda)
-// TODO: Decrease epsilon over time.  In the neural network case, potentially increase it in hopes of jumping out of local optima.
-// TODO: Improve the neural network's ability to approximate the value function
-
 // Standard Library
 import java.awt.Graphics
 import java.awt.Font
@@ -35,7 +24,6 @@ import debug.DebugUtilities.debugPrint
 package ticTacToe {
 
 // Exception types
-// TODO: Convert these over to Java standard exceptions: http://www.tutorialspoint.com/java/java_builtin_exceptions.htm
 case class InvalidParameter(message: String) extends Exception(message)
 case class InvalidCall(message: String) extends Exception(message)
 case class InvalidState(message: String) extends Exception(message)
