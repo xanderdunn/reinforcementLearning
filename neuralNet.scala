@@ -113,7 +113,7 @@ class NeuralNet(numberInputNeurons : Int , numberHiddenNeurons : Int, learningRa
   /** Update the weights of the connections leading to the hidden layer */
   def updateHiddenWeights(deltaOutput : Double) {
     for (hiddenNeuron <- _hiddenNeurons) { // Update each hidden neuron's input connection weight
-      if (hiddenNeuron.isBiasNeuron == false) {
+      if (!hiddenNeuron.isBiasNeuron) {
         var outputConnectionSum = 0.0
         for (connection <- hiddenNeuron.connections) {
           if (connection.a == hiddenNeuron) { // From hidden layer to output layer
@@ -162,7 +162,7 @@ class Neuron(_isBiasNeuon : Boolean, initialBias : Double) {
 
   /* This is called externally when something has changed so that this neuron's value needs to be updated. */
   def updateOutput() {
-    if (isBiasNeuron == false) { // Bias neurons have no calculations to perform
+    if (!isBiasNeuron) { // Bias neurons have no calculations to perform
       var sum = 0.0
       var bias = 0.0
       var hasInputConnection = false
@@ -171,7 +171,7 @@ class Neuron(_isBiasNeuon : Boolean, initialBias : Double) {
           hasInputConnection = true
           val inputNeuron = connection.a
           val weightedValue = inputNeuron.output()*connection.weight
-          if (connection.a.isBiasNeuron == true) {
+          if (connection.a.isBiasNeuron) {
             bias = weightedValue
           }
           else {
@@ -179,7 +179,7 @@ class Neuron(_isBiasNeuon : Boolean, initialBias : Double) {
           }
         }
       }
-      if (hasInputConnection == true) {
+      if (hasInputConnection) {
         _sum = ActivationFunctions.sigmoid(sum + bias)
       }
       else { // This is an input neuron

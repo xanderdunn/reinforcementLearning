@@ -5,7 +5,7 @@ object DebugUtilities {
   val DEBUG = false
 
   def debugPrint(message : String) {
-    if (DEBUG == true) {
+    if (DEBUG) {
       println(message)
     }
   }

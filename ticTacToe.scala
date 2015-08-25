@@ -216,7 +216,7 @@ class TicTacToeLearning(generateGraph : Boolean, gameParameters : GameParameters
     environment.applyAction(agent, epsilon)
     var returnValue = -2.0
     if (environment.isEndState()) {
-      if (environment.playerWon(ticTacToeWorld.agent1) == true) {
+      if (environment.playerWon(ticTacToeWorld.agent1)) {
         returnValue = 1.0
       }
       else if (environment.playerWon(environment.getOtherAgent(ticTacToeWorld.agent1))) {
@@ -306,8 +306,8 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
 
   /** Convenience method for initializing values for a given state if not already initialized */
   def getStateValues(state : List[String]) : Map[Int, Double] = {
-    if (stateValues.contains(state) == false) { // Initialize the state values to 0
-      if (isFullBoard(state) == true) {  // The state values in the stop state are always 0, so always return a map full of zeros
+    if (!stateValues.contains(state)) { // Initialize the state values to 0
+      if (isFullBoard(state)) {  // The state values in the stop state are always 0, so always return a map full of zeros
         val zeroMap = Map[Int, Double]()
         for (i <- 1 until 10) {
           zeroMap(i) = 0.0
@@ -374,7 +374,7 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
     else {
       val randomHundred = nextInt(100)
       if (randomHundred <= (100 - (epsilon * 100.0) - 1)) { // Exploit: Choose the greedy action and break ties randomly
-        if (tabular == true) {
+        if (tabular) {
           ap1 = tabularGreedyAction(sp1)
         }
         else {
@@ -413,14 +413,14 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
     if (a == 0 || ap1 == 0) {
       throw new InvalidCall(s"An attempt was made to give reward to ${name} while its previous action is ${a}. A player must move at least once to be rewarded for it.")
     }
-    if (emptySpaces(s).contains(a) == false) {
+    if (!emptySpaces(s).contains(a)) {
       throw new InvalidState(s"${name} is being rewarded for (s, a) (${s}, ${a}), but it isn't possible to take that action in that given state.")
     }
-    if (isFullBoard(sp1) == false && emptySpaces(sp1).contains(ap1) == false) {
+    if (!isFullBoard(sp1) && !emptySpaces(sp1).contains(ap1)) {
       throw new InvalidState(s"${name} is being rewarded for (sp1, ap1) (${sp1}, ${ap1}), but it isn't possible to take that action in that given state.")
     }
     val previousAndCurrentStateDifferences = differenceBetweenBoards(s, sp1)
-    if (isFullBoard(sp1) == false) { // Check that the state is paired with an action that's possible (It's not possible to take an action that's already occupied)
+    if (!isFullBoard(sp1)) { // Check that the state is paired with an action that's possible (It's not possible to take an action that's already occupied)
       if (previousAndCurrentStateDifferences.size != 2 || !previousAndCurrentStateDifferences.contains("X") || !previousAndCurrentStateDifferences.contains("O")) {
         if (reward == 0.0) {
           throw new InvalidState(s"${name} is being given reward ${reward} for moving from ${s} ${sp1}")
@@ -441,7 +441,7 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
   // TODO: Break this up into a function for tabular reward and a function for neural net reward
   /** The environment calls this to reward the agent for its action. */
   def reward(reward : Double) {
-    if (movedOnce == true && random == false) { // There's no need to update if the agent is a random player or if the agent hasn't moved yet.
+    if (movedOnce && !random) { // There's no need to update if the agent is a random player or if the agent hasn't moved yet.
       sanityCheckReward(reward)
       debugPrint(s"Give reward ${reward} to ${name} moving from ${s} with action ${a} to ${sp1}")
       if (tabular) {
@@ -572,7 +572,7 @@ class TicTacToeBoard() {
     }
     else {
       spaceOwners(space - 1) = newOwner
-      if (uniqueBoardStates.contains(spaceOwners.toList) == false) {
+      if (!uniqueBoardStates.contains(spaceOwners.toList)) {
         uniqueBoardStates(spaceOwners.toList) = 1
       }
       else {
@@ -624,7 +624,7 @@ class Environment(agent1 : Agent, agent2 : Agent) {
     if (mostCommonColumn._2 == size) { // Three spots in the same column, so win
       return true
     }
-    if ((spaces.contains(1) == true && spaces.contains(5) == true && spaces.contains(9)) == true || (spaces.contains(7) == true && spaces.contains(5) == true && spaces.contains(3) == true)) {
+    if ((spaces.contains(1) && spaces.contains(5) && spaces.contains(9)) || (spaces.contains(7) && spaces.contains(5) && spaces.contains(3))) {
       return true
     }
     else {
@@ -660,7 +660,7 @@ class Environment(agent1 : Agent, agent2 : Agent) {
     val ownedSpaces = spaceOwners.getList().zipWithIndex.collect {
       case (element, index) if element == playerMark => index + 1
     }
-    if (isWinningBoard(ownedSpaces.toList) == true) {
+    if (isWinningBoard(ownedSpaces.toList)) {
       return true
     }
     return false
@@ -668,13 +668,13 @@ class Environment(agent1 : Agent, agent2 : Agent) {
 
   /** Check if the current board state is the end of a game because someone won or it's a tie. */
   def isEndState() : Boolean = {
-    if (xWon() == true) {
+    if (xWon()) {
       return true
     }
-    if (oWon() == true) {
+    if (oWon()) {
       return true
     }
-    if (isFullBoard(spaceOwners.getList()) == true) {
+    if (isFullBoard(spaceOwners.getList())) {
       return true
     }
     return false
@@ -709,7 +709,7 @@ class Environment(agent1 : Agent, agent2 : Agent) {
     spaceOwners.setSpaceOwner(agent.ap1, agent.name) // Take the space chosen by the agent
     debugPrint(s"${agent.name} moved to space ${agent.ap1}")
     val otherAgent = getOtherAgent(agent)
-    if (isEndState() == true) {
+    if (isEndState()) {
       giveReward(agent, epsilon)
       giveReward(otherAgent, epsilon)
     }
@@ -719,11 +719,11 @@ class Environment(agent1 : Agent, agent2 : Agent) {
   /** Determine who won and add it to the statistics */
   def countEndState() {
     totalGames += 1
-    if (xWon() == true) {
+    if (xWon()) {
       xWins += 1
       debugPrint("X WON!\n")
     }
-    else if (oWon() == true) {
+    else if (oWon()) {
       oWins += 1
       debugPrint("O WON!\n")
     }
@@ -739,13 +739,13 @@ class Environment(agent1 : Agent, agent2 : Agent) {
   def giveReward(agent : Agent, epsilon : Double) {
     agent.sp1 = spaceOwners.getList()
     agent.chooseAction(epsilon)
-    if (playerWon(agent) == true) {
+    if (playerWon(agent)) {
       agent.reward(1.0)
     }
-    else if (otherPlayerWon(agent) == true) {
+    else if (otherPlayerWon(agent)) {
       agent.reward(-1.0)
     }
-    else if (isFullBoard(spaceOwners.getList()) == true) { // Stalemate
+    else if (isFullBoard(spaceOwners.getList())) { // Stalemate
       agent.reward(0.0)
     }
     else {
