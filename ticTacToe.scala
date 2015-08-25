@@ -505,10 +505,49 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
 
 /** Static convenience functions for handling the environment. */
 object EnvironmentUtilities {
+  val size = 3
   /** Return all spaces where the given agent currently has its mark. */
   def spacesOccupiedByAgent(agent : Agent, spaceOwners : List[String]) : List[Int] = {
     return spaceOwners.zipWithIndex.collect {
       case (element, index) if element == agent.name => index + 1
+    }
+  }
+
+  /** Take a position in the grid and return the left to right number that is the column this position is in. */
+  def columnNumber(position : Int) : Int = {
+    var column = position % size
+    if (column == 0) {
+      column = size
+    }
+    return column - 1
+  }
+
+  /** Take a position in the grid and return the top to bottom number that is the row this position is in. */
+  def rowNumber(position : Int) : Int = {
+    return math.ceil(position.toDouble / size.toDouble).toInt - 1
+  }
+
+  // TODO: The board could be represented in a clever way such that looking up the row and column numbers each time is not necessary.
+  /** Take a list of all spots owned by a single agent.  This agent is in a winning state if it owns an entire row, an entire column, or an entire diagonal.*/
+  def isWinningBoard(spaces : List[Int]) : Boolean = {
+    if (spaces.size == 0) {
+      return false
+    }
+    val ownedRows = spaces.map(x => rowNumber(x))
+    val ownedColumns = spaces.map(x => columnNumber(x))
+    val mostCommonRow = ownedRows.groupBy(identity).mapValues(_.size).maxBy(_._2)
+    if (mostCommonRow._2 == size) { // Three spots in the same row, so win
+      return true
+    }
+    val mostCommonColumn = ownedColumns.groupBy(identity).mapValues(_.size).maxBy(_._2)
+    if (mostCommonColumn._2 == size) { // Three spots in the same column, so win
+      return true
+    }
+    if ((spaces.contains(1) && spaces.contains(5) && spaces.contains(9)) || (spaces.contains(7) && spaces.contains(5) && spaces.contains(3))) {
+      return true
+    }
+    else {
+      return false
     }
   }
 
@@ -600,45 +639,6 @@ class TicTacToeBoard() {
 class Environment(agent1 : Agent, agent2 : Agent) {
   val size = 3
   var spaceOwners = new TicTacToeBoard()  // Array of each space on the board with the corresponding agent name that is currently occupying the space.  0 if no one is occupying the space.
-
-  /** Take a position in the grid and return the left to right number that is the column this position is in. */
-  def columnNumber(position : Int) : Int = {
-    var column = position % size
-    if (column == 0) {
-      column = size
-    }
-    return column - 1
-  }
-
-  /** Take a position in the grid and return the top to bottom number that is the row this position is in. */
-  def rowNumber(position : Int) : Int = {
-    return math.ceil(position.toDouble / size.toDouble).toInt - 1
-  }
-
-  // TODO: The board could be represented in a clever way such that looking up the row and column numbers each time is not necessary.
-  // TODO: Move this to EnvironmentUtilities
-  /** Take a list of all spots owned by a single agent.  This agent is in a winning state if it owns an entire row, an entire column, or an entire diagonal.*/
-  def isWinningBoard(spaces : List[Int]) : Boolean = {
-    if (spaces.size == 0) {
-      return false
-    }
-    val ownedRows = spaces.map(x => rowNumber(x))
-    val ownedColumns = spaces.map(x => columnNumber(x))
-    val mostCommonRow = ownedRows.groupBy(identity).mapValues(_.size).maxBy(_._2)
-    if (mostCommonRow._2 == size) { // Three spots in the same row, so win
-      return true
-    }
-    val mostCommonColumn = ownedColumns.groupBy(identity).mapValues(_.size).maxBy(_._2)
-    if (mostCommonColumn._2 == size) { // Three spots in the same column, so win
-      return true
-    }
-    if ((spaces.contains(1) && spaces.contains(5) && spaces.contains(9)) || (spaces.contains(7) && spaces.contains(5) && spaces.contains(3))) {
-      return true
-    }
-    else {
-      return false
-    }
-  }
 
   def otherPlayerWon(agent : Agent) : Boolean = {
     if (agent.name == "X") {
@@ -793,8 +793,8 @@ class TicTacToePanel(gridWorld : TicTacToeWorld) extends JPanel {
     var i = 1
     for (owner <- environment.spaceOwners.getList()) {
       if (owner != "") {
-        val py = environment.rowNumber(i)
-        val px = environment.columnNumber(i)
+        val py = rowNumber(i)
+        val px = columnNumber(i)
         // TODO: Center these perfectly
         val x = worldOffset + px*gridWidth + gridWidth/4
         val y = worldOffset + py*gridWidth + 23
