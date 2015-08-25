@@ -21,42 +21,42 @@ class TicTacToeSpec extends FlatSpec with Matchers with ParallelTestExecution {
     }
   }
 
-  var minimum = 0.88
-  it should s"have greater than ${minimum*100}% X wins for Tabular vs. Random" in {
+  val tabularVRandomMinimum = 0.88
+  it should s"have greater than ${tabularVRandomMinimum*100}% X wins for Tabular vs. Random" in {
     val gameParameters = new GameParameters()
     gameParameters.agent1Random = false
     val ticTacToeLearning = new TicTacToeLearning(false, gameParameters)
     val results = ticTacToeLearning.learn()
     val xWinRatio = results._1 / results._4
-    xWinRatio should be > (minimum)
+    xWinRatio should be > (tabularVRandomMinimum)
     info(s"X won ${xWinRatio * 100.0}% of games")
     results._4 should equal (20000.0)
     results._5 should be > (7500)
   }
 
-  minimum = 0.84
-  it should s"have greater than ${minimum*100}% X wins for Neural Net vs. Random" in {
+  val neuralVRandomMinimum = 0.83
+  it should s"have greater than ${neuralVRandomMinimum*100}% X wins for Neural Net vs. Random" in {
     val gameParameters = new GameParameters()
     gameParameters.agent1Random = false
     gameParameters.agent1Tabular = false
     val ticTacToeLearning = new TicTacToeLearning(false, gameParameters)
     val results = ticTacToeLearning.learn()
     val xWinRatio = results._1 / results._4
-    xWinRatio should be > (minimum)
+    xWinRatio should be > (neuralVRandomMinimum)
     info(s"X won ${xWinRatio * 100.0}% of games")
     results._4 should equal (20000.0)
     results._5 should be > (5750)
   }
 
-  minimum = 0.98
-  it should s"have greater than ${minimum*100}% stalemates for Tabular vs. Tabular" in {
+  val tabularVTabularMinimum =  0.98
+  it should s"have greater than ${tabularVTabularMinimum*100}% stalemates for Tabular vs. Tabular" in {
     val gameParameters = new GameParameters()
     gameParameters.agent1Random = false
     gameParameters.agent2Random = false
     val ticTacToeLearning = new TicTacToeLearning(false, gameParameters)
     val results = ticTacToeLearning.learn()
     val stalematesRatio = results._3 / results._4
-    stalematesRatio should be > (minimum)
+    stalematesRatio should be > (tabularVTabularMinimum)
     info(s"${stalematesRatio * 100.0}% of games were stalemates")
     results._4 should equal (20000.0)
     results._5 should be > (7450)
