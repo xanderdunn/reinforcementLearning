@@ -408,7 +408,7 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
       throw new InvalidState(s"${name} is being rewarded for (sp1, ap1) (${sp1}, ${ap1}), but it isn't possible to take that action in that given state.")
     }
     val previousAndCurrentStateDifferences = differenceBetweenBoards(s, sp1)
-    if (isFullBoard(sp1) == false) {
+    if (isFullBoard(sp1) == false) { // Check that the state is paired with an action that's possible (It's not possible to take an action that's already occupied)
       if (previousAndCurrentStateDifferences.size != 2 || !previousAndCurrentStateDifferences.contains("X") || !previousAndCurrentStateDifferences.contains("O")) {
         if (reward == 0.0) {
           throw new InvalidState(s"${name} is being given reward ${reward} for moving from ${s} ${sp1}")
