@@ -43,6 +43,8 @@ object Parameters {
   val neuralValueLearningAlpha = 1.0/neuralNumberHiddenNeurons // The learning rate used by the value update function
 }
 
+
+/** Object to store game-specific parameters.  This is passed to TicTacToeLearning to start a game. */
 class GameParameters {
   var agent1Tabular = true
   var agent2Tabular = true
