@@ -21,20 +21,20 @@ class TicTacToeSpec extends FlatSpec with Matchers with ParallelTestExecution {
     }
   }
 
-  var minimum = 0.90
+  var minimum = 0.88
   it should s"have greater than ${minimum*100}% X wins for Tabular vs. Random" in {
     val gameParameters = new GameParameters()
     gameParameters.agent1Random = false
     val ticTacToeLearning = new TicTacToeLearning(false, gameParameters)
     val results = ticTacToeLearning.learn()
     val xWinRatio = results._1 / results._4
-    xWinRatio should be > (0.87)
+    xWinRatio should be > (minimum)
     info(s"X won ${xWinRatio * 100.0}% of games")
     results._4 should equal (20000.0)
     results._5 should be > (7500)
   }
 
-  minimum = 0.85
+  minimum = 0.84
   it should s"have greater than ${minimum*100}% X wins for Neural Net vs. Random" in {
     val gameParameters = new GameParameters()
     gameParameters.agent1Random = false
@@ -42,7 +42,7 @@ class TicTacToeSpec extends FlatSpec with Matchers with ParallelTestExecution {
     val ticTacToeLearning = new TicTacToeLearning(false, gameParameters)
     val results = ticTacToeLearning.learn()
     val xWinRatio = results._1 / results._4
-    xWinRatio should be > (0.80)
+    xWinRatio should be > (minimum)
     info(s"X won ${xWinRatio * 100.0}% of games")
     results._4 should equal (20000.0)
     results._5 should be > (5750)
@@ -56,7 +56,7 @@ class TicTacToeSpec extends FlatSpec with Matchers with ParallelTestExecution {
     val ticTacToeLearning = new TicTacToeLearning(false, gameParameters)
     val results = ticTacToeLearning.learn()
     val stalematesRatio = results._3 / results._4
-    stalematesRatio should be > (0.93)
+    stalematesRatio should be > (minimum)
     info(s"${stalematesRatio * 100.0}% of games were stalemates")
     results._4 should equal (20000.0)
     results._5 should be > (7450)
