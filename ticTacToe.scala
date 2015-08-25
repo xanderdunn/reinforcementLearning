@@ -707,7 +707,7 @@ class Environment(agent1 : Agent, agent2 : Agent) {
       stalemates += 1
     }
     else {
-      println("ERROR: It makes no sense to reach the end state and agent1 didn't win, agent 2 didn't win, and it wasn't a stalemate.")
+      throw new InvalidState("It makes no sense to reach the end state and agent1 didn't win, agent 2 didn't win, and it wasn't a stalemate.")
     }
   }
 
