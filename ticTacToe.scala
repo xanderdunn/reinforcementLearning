@@ -29,18 +29,28 @@ case class InvalidCall(message: String) extends Exception(message)
 case class InvalidState(message: String) extends Exception(message)
 
 
+/** Update function types that can be used for learning. */
+object UpdateFunctionTypes extends Enumeration {
+  type UpdateFunction = Value
+  // Q Learning: q(s,a) = q(s,a) + learningrate * (reward + discountRate * max_a(q(s_(t+1),a)) - q(s,a))
+  // SARSA: q(s,a) = q(s,a) + learningrate * (reward + discountRate * max_a(q(s_(t+1),a)) - q(s,a))
+  val SARSA, QLearning = Value
+}
+
+
 /** Parameters for the Q value update function and the neural network. */
 object Parameters {
   // Tabular Parameters
   val tabularAlpha = 0.1
   // Both
   val epsilon = 0.2
-  val gamma = 0.99 // discount rate
+  val gamma = 1.0 // discount rate
   // Neural Net Parameters
   val neuralNetAlpha = 0.5             // The learning rate in the neural net itself
   val neuralInitialBias = 0.33  // This is in the range [0, f(n)] where n is the number of input neurons and f(x) = 1/sqrt(n).   See here: http://neuralnetworksanddeeplearning.com/chap3.html#weight_initialization
   val neuralNumberHiddenNeurons = 40
   val neuralValueLearningAlpha = 1.0/neuralNumberHiddenNeurons // The learning rate used by the value update function
+  val updateFunction = UpdateFunctionTypes.SARSA
 }
 
 
@@ -419,16 +429,16 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
     }
   }
 
-  def sanityCheckValueUpdate(reward : Double, previousValue : Double, updatedValue : Double) {
-    if (reward > 0.0 && updatedValue - previousValue < 0.0) {
-      throw new InvalidState(s"Player ${name} received a reward of ${reward} and the state value was updated from ${previousValue} ${updatedValue}.  A positive increase was expected.")
-    }
-    else if (reward < 0.0 && previousValue - updatedValue < 0.0) {
-      throw new InvalidState(s"Player ${name} received a reward of ${reward} and the state value was updated from ${previousValue} ${updatedValue}.  A positive increase was expected.")
+  /** On any value update, the value should approach the expected return of the state action pair, not the immediate reward. The target is the reward plus the value of the next state. */
+  def sanityCheckValueUpdate(reward : Double, previousValue : Double, updatedValue : Double, targetValue : Double) {
+    val target = reward + targetValue
+    if (Math.abs(previousValue - target) < Math.abs(updatedValue - target)) {  // The difference between the target and the previous value should always be greater than the difference between the target and updated value
+      throw new InvalidState(s"Player ${name} received a reward of ${reward} and the state value was updated from ${previousValue} to ${updatedValue}.  However, it was expected that the value would get closer to the reward ${reward} + target value ${targetValue}")
     }
   }
 
 
+  // TODO: Break this up into a function for tabular reward and a function for neural net reward
   /** The environment calls this to reward the agent for its action. */
   def reward(reward : Double) {
     if (movedOnce == true && random == false) { // There's no need to update if the agent is a random player or if the agent hasn't moved yet.
@@ -439,22 +449,46 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
         getStateValues(s)
         getStateValues(sp1)
         val previousStateValue = stateValues(s)(a)
-        val updateValue = (Parameters.tabularAlpha)*((reward + stateValues(sp1).maxBy(_._2)._2) - stateValues(s)(a)) // Q-Learning
+        var updateValue = 0.0
+        var targetValue = 0.0
+        Parameters.updateFunction match {
+          case UpdateFunctionTypes.SARSA => {
+            targetValue = stateValues(sp1)(ap1)
+            updateValue = (Parameters.tabularAlpha)*(reward + Parameters.gamma * stateValues(sp1)(ap1) - stateValues(s)(a))
+          }
+          case UpdateFunctionTypes.QLearning => {
+            debugPrint(s"alpha = ${Parameters.tabularAlpha} reward = ${reward} maxStateValue = ${stateValues(sp1).maxBy(_._2)._2} previousStateValue = ${stateValues(s)(a)}")
+            targetValue = stateValues(sp1).maxBy(_._2)._2
+            updateValue = (Parameters.tabularAlpha)*(reward + Parameters.gamma * stateValues(sp1).maxBy(_._2)._2 - stateValues(s)(a))
+          }
+        }
         stateValues(s)(a) += updateValue
-        sanityCheckValueUpdate(reward, previousStateValue, stateValues(s)(a))
+        sanityCheckValueUpdate(reward, previousStateValue, stateValues(s)(a), targetValue)
       }
       else {
         debugPrint(s"Updating ${name}'s neural net for making the move ${a} from the state ${s}")
         val previousStateFeatureVector = neuralNetFeatureVectorForStateAction(s)
-        val stateFeatureVector = neuralNetFeatureVectorForStateAction(sp1)
         val previousStateActionValue = neuralNets(a).feedForward(previousStateFeatureVector)
-        // Q Learning
-        val stateMaxValue = maxNeuralNetValueAndActionForState(sp1)._1
-        val targetValue = previousStateActionValue + Parameters.neuralValueLearningAlpha * (reward + Parameters.gamma * stateMaxValue - previousStateActionValue)  // q(s,a) = q(s,a) + learningrate * (reward + discountRate * max_a(q(s_(t+1),a)) - q(s,a))
-        neuralNets(a).train(previousStateFeatureVector, targetValue)
-        debugPrint(s"Updated player ${name}'s neural net for ${previousStateFeatureVector.mkString(", ")} with reward ${reward} and targetValue ${targetValue}")
+        var updateValue = 0.0
+        var targetValue = 0.0
+        Parameters.updateFunction match {
+          case UpdateFunctionTypes.SARSA => {
+            val stateFeatureVector = neuralNetFeatureVectorForStateAction(sp1)
+            val stateActionValue = neuralNets(ap1).feedForward(stateFeatureVector)
+            targetValue = stateActionValue
+            updateValue = previousStateActionValue + Parameters.neuralValueLearningAlpha * (reward + Parameters.gamma * stateActionValue - previousStateActionValue)
+            debugPrint(s"previousStateActionValue = ${previousStateActionValue} alpha = ${Parameters.neuralValueLearningAlpha} reward = ${reward} gamma = ${Parameters.gamma} stateActionValue = ${stateActionValue} updateValue = ${updateValue}")
+          }
+          case UpdateFunctionTypes.QLearning => {
+            val stateMaxValue = maxNeuralNetValueAndActionForState(sp1)._1
+            targetValue = stateMaxValue
+            updateValue = previousStateActionValue + Parameters.neuralValueLearningAlpha * (reward + Parameters.gamma * stateMaxValue - previousStateActionValue)
+          }
+        }
+        neuralNets(a).train(previousStateFeatureVector, updateValue)
+        debugPrint(s"Updated player ${name}'s neural net for ${previousStateFeatureVector.mkString(", ")} with reward ${reward} and targetValue ${updateValue}")
         val previousStateActionValueUpdated = neuralNets(a).feedForward(previousStateFeatureVector)
-        sanityCheckValueUpdate(reward, previousStateActionValue, previousStateActionValueUpdated)
+        sanityCheckValueUpdate(reward, previousStateActionValue, previousStateActionValueUpdated, targetValue)
       }
     }
   }
