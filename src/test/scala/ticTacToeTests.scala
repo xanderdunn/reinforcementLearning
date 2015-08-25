@@ -45,7 +45,7 @@ class TicTacToeSpec extends FlatSpec with Matchers with ParallelTestExecution {
     xWinRatio should be > (0.80)
     info(s"X won ${xWinRatio * 100.0}% of games")
     results._4 should equal (20000.0)
-    results._5 should be > (5900)
+    results._5 should be > (5850)
   }
 
   minimum = 0.93
