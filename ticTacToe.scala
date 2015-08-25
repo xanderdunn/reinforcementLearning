@@ -437,61 +437,69 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
     }
   }
 
+  def tabularReward(reward : Double) {
+    // Make sure they're initialized
+    getStateValues(s)
+    getStateValues(sp1)
+    val previousStateValue = stateValues(s)(a)
+    var updateValue = 0.0
+    var targetValue = 0.0
+    Parameters.updateFunction match {
+      case UpdateFunctionTypes.SARSA => {
+        targetValue = stateValues(sp1)(ap1)
+        updateValue = (Parameters.tabularAlpha)*(reward + Parameters.gamma * stateValues(sp1)(ap1) - stateValues(s)(a))
+      }
+      case UpdateFunctionTypes.QLearning => {
+        debugPrint(s"alpha = ${Parameters.tabularAlpha} reward = ${reward} maxStateValue = ${stateValues(sp1).maxBy(_._2)._2} previousStateValue = ${stateValues(s)(a)}")
+        targetValue = stateValues(sp1).maxBy(_._2)._2
+        updateValue = (Parameters.tabularAlpha)*(reward + Parameters.gamma * stateValues(sp1).maxBy(_._2)._2 - stateValues(s)(a))
+      }
+    }
+    stateValues(s)(a) += updateValue
+    sanityCheckValueUpdate(reward, previousStateValue, stateValues(s)(a), targetValue)
+  }
 
-  // TODO: Break this up into a function for tabular reward and a function for neural net reward
+  def neuralReward(reward : Double) {
+    debugPrint(s"Updating ${name}'s neural net for making the move ${a} from the state ${s}")
+    val previousStateFeatureVector = neuralNetFeatureVectorForStateAction(s)
+    val previousStateActionValue = neuralNets(a).feedForward(previousStateFeatureVector)
+    var updateValue = 0.0
+    var targetValue = 0.0
+    Parameters.updateFunction match {
+      case UpdateFunctionTypes.SARSA => {
+        val stateFeatureVector = neuralNetFeatureVectorForStateAction(sp1)
+        val stateActionValue = neuralNets(ap1).feedForward(stateFeatureVector)
+        targetValue = stateActionValue
+        updateValue = previousStateActionValue + Parameters.neuralValueLearningAlpha * (reward + Parameters.gamma * stateActionValue - previousStateActionValue)
+        debugPrint(s"previousStateActionValue = ${previousStateActionValue} alpha = ${Parameters.neuralValueLearningAlpha} reward = ${reward} gamma = ${Parameters.gamma} stateActionValue = ${stateActionValue} updateValue = ${updateValue}")
+      }
+      case UpdateFunctionTypes.QLearning => {
+        val stateMaxValue = maxNeuralNetValueAndActionForState(sp1)._1
+        targetValue = stateMaxValue
+        updateValue = previousStateActionValue + Parameters.neuralValueLearningAlpha * (reward + Parameters.gamma * stateMaxValue - previousStateActionValue)
+      }
+    }
+    neuralNets(a).train(previousStateFeatureVector, updateValue)
+    debugPrint(s"Updated player ${name}'s neural net for ${previousStateFeatureVector.mkString(", ")} with reward ${reward} and targetValue ${updateValue}")
+    val previousStateActionValueUpdated = neuralNets(a).feedForward(previousStateFeatureVector)
+    sanityCheckValueUpdate(reward, previousStateActionValue, previousStateActionValueUpdated, targetValue)
+  }
+
+
   /** The environment calls this to reward the agent for its action. */
   def reward(reward : Double) {
     if (movedOnce && !random) { // There's no need to update if the agent is a random player or if the agent hasn't moved yet.
       sanityCheckReward(reward)
       debugPrint(s"Give reward ${reward} to ${name} moving from ${s} with action ${a} to ${sp1}")
       if (tabular) {
-        // Make sure they're initialized
-        getStateValues(s)
-        getStateValues(sp1)
-        val previousStateValue = stateValues(s)(a)
-        var updateValue = 0.0
-        var targetValue = 0.0
-        Parameters.updateFunction match {
-          case UpdateFunctionTypes.SARSA => {
-            targetValue = stateValues(sp1)(ap1)
-            updateValue = (Parameters.tabularAlpha)*(reward + Parameters.gamma * stateValues(sp1)(ap1) - stateValues(s)(a))
-          }
-          case UpdateFunctionTypes.QLearning => {
-            debugPrint(s"alpha = ${Parameters.tabularAlpha} reward = ${reward} maxStateValue = ${stateValues(sp1).maxBy(_._2)._2} previousStateValue = ${stateValues(s)(a)}")
-            targetValue = stateValues(sp1).maxBy(_._2)._2
-            updateValue = (Parameters.tabularAlpha)*(reward + Parameters.gamma * stateValues(sp1).maxBy(_._2)._2 - stateValues(s)(a))
-          }
-        }
-        stateValues(s)(a) += updateValue
-        sanityCheckValueUpdate(reward, previousStateValue, stateValues(s)(a), targetValue)
+        tabularReward(reward)
       }
       else {
-        debugPrint(s"Updating ${name}'s neural net for making the move ${a} from the state ${s}")
-        val previousStateFeatureVector = neuralNetFeatureVectorForStateAction(s)
-        val previousStateActionValue = neuralNets(a).feedForward(previousStateFeatureVector)
-        var updateValue = 0.0
-        var targetValue = 0.0
-        Parameters.updateFunction match {
-          case UpdateFunctionTypes.SARSA => {
-            val stateFeatureVector = neuralNetFeatureVectorForStateAction(sp1)
-            val stateActionValue = neuralNets(ap1).feedForward(stateFeatureVector)
-            targetValue = stateActionValue
-            updateValue = previousStateActionValue + Parameters.neuralValueLearningAlpha * (reward + Parameters.gamma * stateActionValue - previousStateActionValue)
-            debugPrint(s"previousStateActionValue = ${previousStateActionValue} alpha = ${Parameters.neuralValueLearningAlpha} reward = ${reward} gamma = ${Parameters.gamma} stateActionValue = ${stateActionValue} updateValue = ${updateValue}")
-          }
-          case UpdateFunctionTypes.QLearning => {
-            val stateMaxValue = maxNeuralNetValueAndActionForState(sp1)._1
-            targetValue = stateMaxValue
-            updateValue = previousStateActionValue + Parameters.neuralValueLearningAlpha * (reward + Parameters.gamma * stateMaxValue - previousStateActionValue)
-          }
-        }
-        neuralNets(a).train(previousStateFeatureVector, updateValue)
-        debugPrint(s"Updated player ${name}'s neural net for ${previousStateFeatureVector.mkString(", ")} with reward ${reward} and targetValue ${updateValue}")
-        val previousStateActionValueUpdated = neuralNets(a).feedForward(previousStateFeatureVector)
-        sanityCheckValueUpdate(reward, previousStateActionValue, previousStateActionValueUpdated, targetValue)
+        neuralReward(reward)
       }
     }
   }
+
 }
 
 
