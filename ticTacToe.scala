@@ -86,11 +86,11 @@ class TicTacToeLearning(generateGraph : Boolean, gameParameters : GameParameters
     }
 
     while (environment.totalGames < gameParameters.numberTrainEpisodes) {
-      playEpisode(ticTacToeWorld, Parameters.epsilon, "")
+      playEpisode(ticTacToeWorld, Parameters.epsilon, true, "")
     }
     environment.resetGameStats()
     while (environment.totalGames < gameParameters.numberTestEpisodes) {
-      playEpisode(ticTacToeWorld, 0.0, "")
+      playEpisode(ticTacToeWorld, 0.0, false, "")
     }
     val uniqueBoardStates = ticTacToeWorld.environment.spaceOwners.uniqueBoardStates
     (environment.xWins, environment.oWins, environment.stalemates, environment.totalGames, uniqueBoardStates.size)
@@ -191,29 +191,29 @@ class TicTacToeLearning(generateGraph : Boolean, gameParameters : GameParameters
     var episodeCounter = 0
     val ticTacToeWorld = new TicTacToeWorld(tabular, tabular, playerXRandom, playerORandom)
     while (episodeCounter < numberEpisodes) {
-      stats(episodeCounter) = playEpisode(ticTacToeWorld, epsilon, "X")
+      stats(episodeCounter) = playEpisode(ticTacToeWorld, epsilon, true, "X")
       episodeCounter += 1
     }
     return stats
   }
 
-  def playEpisode(ticTacToeWorld : TicTacToeWorld, epsilon : Double, collectingDataFor : String) : Double = {
+  def playEpisode(ticTacToeWorld : TicTacToeWorld, epsilon : Double, shouldLearn : Boolean, collectingDataFor : String) : Double = {
     var episodeOutcome = -2.0
     while (episodeOutcome == -2.0) { // Train with epsilon
-      episodeOutcome = iterateGameStep(ticTacToeWorld, epsilon, None, collectingDataFor)
+      episodeOutcome = iterateGameStep(ticTacToeWorld, epsilon, shouldLearn, None, collectingDataFor)
     }
     episodeOutcome = -2.0
     while (episodeOutcome == -2.0) { // Test run with epsilon = 0
-      episodeOutcome = iterateGameStep(ticTacToeWorld, 0.0, None, collectingDataFor)
+      episodeOutcome = iterateGameStep(ticTacToeWorld, 0.0, shouldLearn, None, collectingDataFor)
     }
     return episodeOutcome
   }
 
   /** Take one step in the game: The player takes an action, the other player responds, and the board hands out reward to both players.  If you're collecting data for a graph, pass in the string "X" or "O" for the player whose data you're interested in.  This method returns 1 if that player won this episode, -1 if it lost, 0 if it was a stalemate, and -2 if the episode hasn't ended. */
-  def iterateGameStep(ticTacToeWorld : TicTacToeWorld, epsilon : Double, frame : Option[JFrame], collectingDataFor : String) : Double = {
+  def iterateGameStep(ticTacToeWorld : TicTacToeWorld, epsilon : Double, shouldLearn : Boolean, frame : Option[JFrame], collectingDataFor : String) : Double = {
     val agent = ticTacToeWorld.currentPlayer
     val environment = ticTacToeWorld.environment
-    environment.applyAction(agent, epsilon)
+    environment.applyAction(agent, epsilon, shouldLearn)
     var returnValue = -2.0
     if (environment.isEndState()) {
       if (environment.playerWon(ticTacToeWorld.agent1)) {
@@ -485,7 +485,6 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
     sanityCheckValueUpdate(reward, previousStateActionValue, previousStateActionValueUpdated, targetValue)
   }
 
-
   /** The environment calls this to reward the agent for its action. */
   def reward(reward : Double) {
     if (movedOnce && !random) { // There's no need to update if the agent is a random player or if the agent hasn't moved yet.
@@ -712,14 +711,14 @@ class Environment(agent1 : Agent, agent2 : Agent) {
   }
 
   /** Make the action most recently chosen by the agent take effect. */
-  def applyAction(agent : Agent, epsilon : Double) {
-    giveReward(agent, epsilon) // For this agent's previous move that wasn't rewarded yet because the subsequent player's move could have put it into an end state
+  def applyAction(agent : Agent, epsilon : Double, shouldLearn : Boolean) {
+      giveReward(agent, epsilon, shouldLearn) // For this agent's previous move that wasn't rewarded yet because the subsequent player's move could have put it into an end state
     spaceOwners.setSpaceOwner(agent.ap1, agent.name) // Take the space chosen by the agent
     debugPrint(s"${agent.name} moved to space ${agent.ap1}")
     val otherAgent = getOtherAgent(agent)
     if (isEndState()) {
-      giveReward(agent, epsilon)
-      giveReward(otherAgent, epsilon)
+      giveReward(agent, epsilon, shouldLearn)
+      giveReward(otherAgent, epsilon, shouldLearn)
     }
     agent.movedOnce = true
   }
@@ -744,20 +743,22 @@ class Environment(agent1 : Agent, agent2 : Agent) {
   }
 
   /** Update the agent's state and give it a reward for its ation. Return 1 if this is the end of the episode, 0 otherwise. */
-  def giveReward(agent : Agent, epsilon : Double) {
+  def giveReward(agent : Agent, epsilon : Double, shouldLearn : Boolean) {
     agent.sp1 = spaceOwners.getList()
     agent.chooseAction(epsilon)
-    if (playerWon(agent)) {
-      agent.reward(1.0)
-    }
-    else if (otherPlayerWon(agent)) {
-      agent.reward(-1.0)
-    }
-    else if (isFullBoard(spaceOwners.getList())) { // Stalemate
-      agent.reward(0.0)
-    }
-    else {
-      agent.reward(0.0)
+    if (shouldLearn) {
+      if (playerWon(agent)) {
+        agent.reward(1.0)
+      }
+      else if (otherPlayerWon(agent)) {
+        agent.reward(-1.0)
+      }
+      else if (isFullBoard(spaceOwners.getList())) { // Stalemate
+        agent.reward(0.0)
+      }
+      else {
+        agent.reward(0.0)
+      }
     }
   }
 }
