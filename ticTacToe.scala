@@ -43,12 +43,12 @@ object Parameters {
   // Tabular Parameters
   val tabularAlpha = 0.1
   // Both
-  val epsilon = 0.2
+  val epsilon = 0.4
   val gamma = 1.0 // discount rate
   // Neural Net Parameters
   val neuralNetAlpha = 0.5             // The learning rate in the neural net itself
   val neuralInitialBias = 0.33  // This is in the range [0, f(n)] where n is the number of input neurons and f(x) = 1/sqrt(n).   See here: http://neuralnetworksanddeeplearning.com/chap3.html#weight_initialization
-  val neuralNumberHiddenNeurons = 40
+  val neuralNumberHiddenNeurons = 26
   val neuralValueLearningAlpha = 1.0/neuralNumberHiddenNeurons // The learning rate used by the value update function
   val updateFunction = UpdateFunctionTypes.SARSA
 }
