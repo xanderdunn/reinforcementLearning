@@ -34,7 +34,7 @@ class TicTacToeSpec extends FlatSpec with Matchers with ParallelTestExecution {
     results._5 should be > (7500)
   }
 
-  val neuralVRandomMinimum = 0.83
+  val neuralVRandomMinimum = 0.79
   it should s"have greater than ${neuralVRandomMinimum*100}% X wins for Neural Net vs. Random" in {
     val gameParameters = new GameParameters()
     gameParameters.agent1Random = false
