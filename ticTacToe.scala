@@ -215,11 +215,11 @@ class TicTacToeLearning(generateGraph : Boolean, gameParameters : GameParameters
     val environment = ticTacToeWorld.environment
     environment.applyAction(agent, epsilon, shouldLearn)
     var returnValue = -2.0
-    if (environment.isEndState()) {
-      if (environment.playerWon(ticTacToeWorld.agent1)) {
+    if (isEndState(environment.spaceOwners.getList())) {
+      if (playerWon(ticTacToeWorld.agent1, environment.spaceOwners.getList())) {
         returnValue = 1.0
       }
-      else if (environment.playerWon(environment.getOtherAgent(ticTacToeWorld.agent1))) {
+      else if (playerWon(environment.getOtherAgent(ticTacToeWorld.agent1), environment.spaceOwners.getList())) {
         returnValue = -1.0
       }
       else {
@@ -265,11 +265,13 @@ class TicTacToeWorld(_agent1Tabular : Boolean, _agent2Tabular : Boolean, agent1R
     agent1.movedOnce = false
     agent1.a = 0
     agent1.ap1 = 0
+    agent1.numberRewards = 0
     agent2.s = List.fill(9){""}
     agent2.sp1 = List.fill(9){""}
     agent2.movedOnce = false
     agent2.a = 0
     agent2.ap1 = 0
+    agent2.numberRewards = 0
   }
 }
 
@@ -303,11 +305,12 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
   }
   def random = _random
   var movedOnce = false // To know not to update the value function before its first action
+  var numberRewards = 0 // Used to sanity check the number of times each agent is rewarded each episode
 
   /** Convenience method for initializing values for a given state if not already initialized */
   def getStateValues(state : List[String]) : Map[Int, Double] = {
     if (!stateValues.contains(state)) { // Initialize the state values to 0
-      if (isFullBoard(state)) {  // The state values in the stop state are always 0, so always return a map full of zeros
+      if (isEndState(state)) {  // The state values in the stop state are always 0, so always return a map full of zeros
         val zeroMap = Map[Int, Double]()
         for (i <- 1 until 10) {
           zeroMap(i) = 0.0
@@ -356,7 +359,6 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
     }
     return (maxValue, maxValueSpaces(scala.util.Random.nextInt(maxValueSpaces.size))) // Break ties randomly
   }
-
 
   /** The agent chooses the next action to take. */
   def chooseAction(epsilon : Double) {
@@ -410,13 +412,13 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
   }
 
   def sanityCheckReward(reward : Double) {
-    if (a == 0 || ap1 == 0) {
+    if (a == 0) {
       throw new InvalidCall(s"An attempt was made to give reward to ${name} while its previous action is ${a}. A player must move at least once to be rewarded for it.")
     }
     if (!emptySpaces(s).contains(a)) {
       throw new InvalidState(s"${name} is being rewarded for (s, a) (${s}, ${a}), but it isn't possible to take that action in that given state.")
     }
-    if (!isFullBoard(sp1) && !emptySpaces(sp1).contains(ap1)) {
+    if (!isEndState(sp1) && !emptySpaces(sp1).contains(ap1)) {
       throw new InvalidState(s"${name} is being rewarded for (sp1, ap1) (${sp1}, ${ap1}), but it isn't possible to take that action in that given state.")
     }
     val previousAndCurrentStateDifferences = differenceBetweenBoards(s, sp1)
@@ -441,18 +443,22 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
     // Make sure they're initialized
     getStateValues(s)
     getStateValues(sp1)
-    val previousStateValue = stateValues(s)(a)
+    val previousStateValue = getStateValues(s)(a)
     var updateValue = 0.0
     var targetValue = 0.0
     Parameters.updateFunction match {
       case UpdateFunctionTypes.SARSA => {
-        targetValue = stateValues(sp1)(ap1)
-        updateValue = (Parameters.tabularAlpha)*(reward + Parameters.gamma * stateValues(sp1)(ap1) - stateValues(s)(a))
+        if (!isEndState(sp1)) {
+          targetValue = getStateValues(sp1)(ap1)
+        }
+        updateValue = (Parameters.tabularAlpha)*(reward + Parameters.gamma * targetValue - getStateValues(s)(a))
       }
       case UpdateFunctionTypes.QLearning => {
-        debugPrint(s"alpha = ${Parameters.tabularAlpha} reward = ${reward} maxStateValue = ${stateValues(sp1).maxBy(_._2)._2} previousStateValue = ${stateValues(s)(a)}")
-        targetValue = stateValues(sp1).maxBy(_._2)._2
-        updateValue = (Parameters.tabularAlpha)*(reward + Parameters.gamma * stateValues(sp1).maxBy(_._2)._2 - stateValues(s)(a))
+        debugPrint(s"alpha = ${Parameters.tabularAlpha} reward = ${reward} maxStateValue = ${getStateValues(sp1).maxBy(_._2)._2} previousStateValue = ${getStateValues(s)(a)}")
+        if (!isEndState(sp1)) {
+          targetValue = getStateValues(sp1).maxBy(_._2)._2
+        }
+        updateValue = (Parameters.tabularAlpha)*(reward + Parameters.gamma * targetValue - getStateValues(s)(a))
       }
     }
     stateValues(s)(a) += updateValue
@@ -468,15 +474,17 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
     Parameters.updateFunction match {
       case UpdateFunctionTypes.SARSA => {
         val stateFeatureVector = neuralNetFeatureVectorForStateAction(sp1)
-        val stateActionValue = neuralNets(ap1).feedForward(stateFeatureVector)
-        targetValue = stateActionValue
-        updateValue = previousStateActionValue + Parameters.neuralValueLearningAlpha * (reward + Parameters.gamma * stateActionValue - previousStateActionValue)
-        debugPrint(s"previousStateActionValue = ${previousStateActionValue} alpha = ${Parameters.neuralValueLearningAlpha} reward = ${reward} gamma = ${Parameters.gamma} stateActionValue = ${stateActionValue} updateValue = ${updateValue}")
+        if (!isEndState(sp1)) {
+          targetValue = neuralNets(ap1).feedForward(stateFeatureVector)
+        }
+        updateValue = previousStateActionValue + Parameters.neuralValueLearningAlpha * (reward + Parameters.gamma * targetValue - previousStateActionValue)
+        debugPrint(s"previousStateActionValue = ${previousStateActionValue} alpha = ${Parameters.neuralValueLearningAlpha} reward = ${reward} gamma = ${Parameters.gamma} stateActionValue = ${targetValue} updateValue = ${updateValue}")
       }
       case UpdateFunctionTypes.QLearning => {
-        val stateMaxValue = maxNeuralNetValueAndActionForState(sp1)._1
-        targetValue = stateMaxValue
-        updateValue = previousStateActionValue + Parameters.neuralValueLearningAlpha * (reward + Parameters.gamma * stateMaxValue - previousStateActionValue)
+        if (!isEndState(sp1)) {
+          targetValue = maxNeuralNetValueAndActionForState(sp1)._1
+        }
+        updateValue = previousStateActionValue + Parameters.neuralValueLearningAlpha * (reward + Parameters.gamma * targetValue - previousStateActionValue)
       }
     }
     neuralNets(a).train(previousStateFeatureVector, updateValue)
@@ -490,6 +498,7 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
     if (movedOnce && !random) { // There's no need to update if the agent is a random player or if the agent hasn't moved yet.
       sanityCheckReward(reward)
       debugPrint(s"Give reward ${reward} to ${name} moving from ${s} with action ${a} to ${sp1}")
+      numberRewards += 1
       if (tabular) {
         tabularReward(reward)
       }
@@ -498,7 +507,6 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
       }
     }
   }
-
 }
 
 
@@ -588,6 +596,54 @@ object EnvironmentUtilities {
       return false
     }
   }
+
+  def otherPlayerWon(agent : Agent, board : List[String]) : Boolean = {
+    if (agent.name == "X") {
+      return playerWon("O", board)
+    }
+    else {
+      return playerWon("X", board)
+    }
+  }
+
+  /** Check if player X won. */
+  def xWon(board : List[String]) : Boolean = {
+    return playerWon("X", board)
+  }
+
+  /** Check if player O won. */
+  def oWon(board : List[String]) : Boolean = {
+    return playerWon("O", board)
+  }
+
+  def playerWon(agent : Agent, board : List[String]) : Boolean = {
+    return playerWon(agent.name, board)
+  }
+
+  /** Check if the given player won. */
+  def playerWon(playerMark : String, board : List[String]) : Boolean = {
+    val ownedSpaces = board.zipWithIndex.collect {
+      case (element, index) if element == playerMark => index + 1
+    }
+    if (isWinningBoard(ownedSpaces.toList)) {
+      return true
+    }
+    return false
+  }
+
+  /** Check if the current board state is the end of a game because someone won or it's a tie. */
+  def isEndState(board : List[String]) : Boolean = {
+    if (xWon(board)) {
+      return true
+    }
+    if (oWon(board)) {
+      return true
+    }
+    if (isFullBoard(board)) {
+      return true
+    }
+    return false
+  }
 }
 
 
@@ -639,54 +695,6 @@ class Environment(agent1 : Agent, agent2 : Agent) {
   val size = 3
   var spaceOwners = new TicTacToeBoard()  // Array of each space on the board with the corresponding agent name that is currently occupying the space.  0 if no one is occupying the space.
 
-  def otherPlayerWon(agent : Agent) : Boolean = {
-    if (agent.name == "X") {
-      return playerWon("O")
-    }
-    else {
-      return playerWon("X")
-    }
-  }
-
-  /** Check if player X won. */
-  def xWon() : Boolean = {
-    return playerWon("X")
-  }
-
-  /** Check if player O won. */
-  def oWon() : Boolean = {
-    return playerWon("O")
-  }
-
-  def playerWon(agent : Agent) : Boolean = {
-    return playerWon(agent.name)
-  }
-
-  /** Check if the given player won. */
-  def playerWon(playerMark : String) : Boolean = {
-    val ownedSpaces = spaceOwners.getList().zipWithIndex.collect {
-      case (element, index) if element == playerMark => index + 1
-    }
-    if (isWinningBoard(ownedSpaces.toList)) {
-      return true
-    }
-    return false
-  }
-
-  /** Check if the current board state is the end of a game because someone won or it's a tie. */
-  def isEndState() : Boolean = {
-    if (xWon()) {
-      return true
-    }
-    if (oWon()) {
-      return true
-    }
-    if (isFullBoard(spaceOwners.getList())) {
-      return true
-    }
-    return false
-  }
-
   /** Statistics to track the progress of the outcomes of episodes. */
   var xWins = 0.0
   var oWins = 0.0
@@ -710,15 +718,27 @@ class Environment(agent1 : Agent, agent2 : Agent) {
     }
   }
 
+  /** Check that the agent has been rewared the correct number of times */
+  def sanityCheckNumberRewards(agent : Agent) {
+    val numberSpacesOccupied = spacesOccupiedByAgent(agent, agent.sp1).size
+    if (!agent.random && agent.numberRewards != numberSpacesOccupied) { // Random agents are never rewarded
+      throw new InvalidState(s"The agent ${agent.name} was rewarded ${agent.numberRewards} times during this episode.  However, it made ${numberSpacesOccupied} moves in the ending board state ${agent.sp1}.")
+    }
+  }
+
   /** Make the action most recently chosen by the agent take effect. */
   def applyAction(agent : Agent, epsilon : Double, shouldLearn : Boolean) {
-      giveReward(agent, epsilon, shouldLearn) // For this agent's previous move that wasn't rewarded yet because the subsequent player's move could have put it into an end state
+    giveReward(agent, epsilon, shouldLearn) // For this agent's previous move that wasn't rewarded yet because the subsequent player's move could have put it into an end state
     spaceOwners.setSpaceOwner(agent.ap1, agent.name) // Take the space chosen by the agent
     debugPrint(s"${agent.name} moved to space ${agent.ap1}")
     val otherAgent = getOtherAgent(agent)
-    if (isEndState()) {
+    if (isEndState(spaceOwners.getList())) {
       giveReward(agent, epsilon, shouldLearn)
       giveReward(otherAgent, epsilon, shouldLearn)
+      if (shouldLearn) {
+        sanityCheckNumberRewards(agent)
+        sanityCheckNumberRewards(otherAgent)
+      }
     }
     agent.movedOnce = true
   }
@@ -726,11 +746,11 @@ class Environment(agent1 : Agent, agent2 : Agent) {
   /** Determine who won and add it to the statistics */
   def countEndState() {
     totalGames += 1
-    if (xWon()) {
+    if (xWon(spaceOwners.getList())) {
       xWins += 1
       debugPrint("X WON!\n")
     }
-    else if (oWon()) {
+    else if (oWon(spaceOwners.getList())) {
       oWins += 1
       debugPrint("O WON!\n")
     }
@@ -745,12 +765,17 @@ class Environment(agent1 : Agent, agent2 : Agent) {
   /** Update the agent's state and give it a reward for its ation. Return 1 if this is the end of the episode, 0 otherwise. */
   def giveReward(agent : Agent, epsilon : Double, shouldLearn : Boolean) {
     agent.sp1 = spaceOwners.getList()
-    agent.chooseAction(epsilon)
+    if (!isEndState(spaceOwners.getList())) {
+      agent.chooseAction(epsilon)
+    }
+    else { // The agent can not make any moves from an end state, so set the next move to 0, an invalid choice
+      agent.ap1 = 0
+    }
     if (shouldLearn) {
-      if (playerWon(agent)) {
+      if (playerWon(agent, spaceOwners.getList())) {
         agent.reward(1.0)
       }
-      else if (otherPlayerWon(agent)) {
+      else if (otherPlayerWon(agent, spaceOwners.getList())) {
         agent.reward(-1.0)
       }
       else if (isFullBoard(spaceOwners.getList())) { // Stalemate
