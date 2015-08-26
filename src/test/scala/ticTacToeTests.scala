@@ -39,6 +39,7 @@ class TicTacToeSpec extends FlatSpec with Matchers with ParallelTestExecution {
     val gameParameters = new GameParameters()
     gameParameters.agent1Random = false
     gameParameters.agent1Tabular = false
+    gameParameters.numberTrainEpisodes = 80000
     val ticTacToeLearning = new TicTacToeLearning(false, gameParameters)
     val results = ticTacToeLearning.learn()
     val xWinRatio = results._1 / results._4
@@ -53,6 +54,7 @@ class TicTacToeSpec extends FlatSpec with Matchers with ParallelTestExecution {
     val gameParameters = new GameParameters()
     gameParameters.agent1Random = false
     gameParameters.agent2Random = false
+    gameParameters.numberTrainEpisodes = 70000
     val ticTacToeLearning = new TicTacToeLearning(false, gameParameters)
     val results = ticTacToeLearning.learn()
     val stalematesRatio = results._3 / results._4
