@@ -10,8 +10,8 @@ Implement a reinforcement learner on the Tic-tac-toe problem that uses a neural 
 
 ## Run
 ### Tic-tac-toe
-Building, dependencies, and running tests are handled by `sbt`.  On Mac you can install sbt using HomeBrew with `brew install sbt`.  Then, in the project's directory:
-- `sbt test`
+Building, dependencies, and running tests are handled by gradle.  On Mac you can install gralde using HomeBrew with `brew install gradle`.  Then, in the project's directory:
+- `gradle test`
 - Expect to see output in the terminal.  The unit tests will pass for each game situation if the threshold for optimal play is hit.  A visualization of the Tic-tac-toe board has been implemented, but it's off by default because it's a huge performance drain.  Turn it on by setting showVisual to yes in ticTacToe.sala.  If you want to see the visualization occurring at human pace, open ticTacToe.scala and uncomment the line `Thread.sleep(500)`.  
 
 ### Gridworld

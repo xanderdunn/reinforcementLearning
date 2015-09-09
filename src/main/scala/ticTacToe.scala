@@ -12,9 +12,6 @@ import javax.swing.JPanel
 import scala.math
 import scala.util.Random.{nextInt, nextDouble}
 import scala.collection.mutable.{ArrayBuffer, Seq, IndexedSeq, MutableList, Map}
-// Third Party, for Plotting
-import breeze.linalg._
-import breeze.plot._
 // Custom
 import neuralNet.NeuralNet
 import neuralNet.NeuralNetUtilities._
@@ -160,25 +157,7 @@ class TicTacToeLearning(generateGraph : Boolean, gameParameters : GameParameters
           finalResults2(i) = finalResults2(i).toDouble / numberIterations.toDouble * 100.0
           i += 1
         }
-
-        val f = Figure()
-        val p = f.subplot(0)
-        if (plotting == 1 || plotting == 2) {
-          p += plot(episodeNumbers, finalResults1, '.')
-        }
-        else if (plotting == 3) {
-          p += plot(episodeNumbers, finalResults1, '.')
-          p += plot(episodeNumbers, finalResults2, '.')
-        }
-        p.xlabel = "Episodes"
-        if (plotting == 1 || plotting == 3) {
-          p.ylabel = s"% wins out of ${numberIterations.toInt} iterations"
-        }
-        else {
-          p.ylabel = s"% stalemates out of ${numberIterations.toInt} iterations"
-        }
-        p.title = title
-        f.saveas(filename)
+        // TODO: Output the results so that I can graph them externally
       }
     }
   }
