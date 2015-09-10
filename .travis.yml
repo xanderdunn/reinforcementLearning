@@ -11,8 +11,11 @@ branches:
         - master
 
 script:
-  - gradle test
-  - gradle testScoverage
+  - sbt compile             # Run the WartRemover static analyzer
+  - sbt scapegoat           # Run the Scapegoat static analyzer.  These results are output to the terminal.
+  - gradle test             # Run the tests that are too intense to be run as 
+  - gradle testScoverage    # Run the remaining tests with instrumented code for coverage statistics
 
 after_success:
+  # Send the code coverage information to codecov.io
   - pip install --user codecov && codecov

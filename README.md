@@ -12,7 +12,7 @@ Implement a reinforcement learner on the Tic-tac-toe problem that uses a neural 
 
 ## Run
 ### Tic-tac-toe
-Building, dependencies, and running tests are handled by gradle.  On Mac you can install gralde using HomeBrew with `brew install gradle`.  Then, in the project's directory:
+Building, dependencies, and running tests are handled by gradle.  On Mac you can install gradle using HomeBrew with `brew install gradle`.  Then, in the project's directory:
 - `gradle test`
 - Expect to see output in the terminal.  The unit tests will pass for each game situation if the threshold for optimal play is hit.  A visualization of the Tic-tac-toe board has been implemented, but it's off by default because it's a huge performance drain.  Turn it on by setting showVisual to yes in ticTacToe.sala.  If you want to see the visualization occurring at human pace, open ticTacToe.scala and uncomment the line `Thread.sleep(500)`.  
 
@@ -44,4 +44,3 @@ Building, dependencies, and running tests are handled by gradle.  On Mac you can
 - I believe the neural net is simply getting stuck in local optima, as it does achieve 100% stalemate rate *sometimes* under certain parameters.  My next step is to try annealing to avoid this.
 - I'd like to train the tabular vs. tabular situation, output the tabular value function table, and then use that as training data for my neural network.  Then I can test to see how accurately the neural net is capable of representing the value function in question.  This will separate the problems of the neural net's ability to approximate the function with the neural net + reinforcement learner's ability to traverse states sufficiently to train itself. 
 - It would probably be a good idea to hook up my reinforcement learner to a more established neural network library so that I can rapidly test various configurations (more than 1 hidden layer, various activation functions, etc.).  This will sanity check my neural net implementation as well as allow me to quickly discover what might work better.
-
