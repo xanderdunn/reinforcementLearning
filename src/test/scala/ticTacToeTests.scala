@@ -1,8 +1,9 @@
 import org.scalatest.{FlatSpec, Matchers, ParallelTestExecution}
 import ticTacToe.{TicTacToeLearning, GameParameters}
+import tags.{CoverageTest, NonCoverageTest}
 
 class TicTacToeSpec extends FlatSpec with Matchers with ParallelTestExecution {
-  "Tic-tac-toe learning" should "have 43% X wins, 43% O wins, and 14% stalemates for Random vs. Random, regardless of being a tabular or neural net agent." in {
+  "Tic-tac-toe learning" should "have 43% X wins, 43% O wins, and 14% stalemates for Random vs. Random, regardless of being a tabular or neural net agent." taggedAs(CoverageTest) in {
     val gameParametersTabularTabular = new GameParameters()
     val gameParametersTabularNeural = new GameParameters()
     gameParametersTabularNeural.agent2Tabular = false
@@ -22,7 +23,7 @@ class TicTacToeSpec extends FlatSpec with Matchers with ParallelTestExecution {
   }
 
   val tabularVRandomMinimum = 0.88
-  it should s"have greater than ${tabularVRandomMinimum*100}% X wins for Tabular vs. Random" in {
+  it should s"have greater than ${tabularVRandomMinimum*100}% X wins for Tabular vs. Random" taggedAs(CoverageTest) in {
     val gameParameters = new GameParameters()
     gameParameters.agent1Random = false
     val ticTacToeLearning = new TicTacToeLearning(false, gameParameters)
@@ -35,7 +36,7 @@ class TicTacToeSpec extends FlatSpec with Matchers with ParallelTestExecution {
   }
 
   val neuralVRandomMinimum = 0.79
-  it should s"have greater than ${neuralVRandomMinimum*100}% X wins for Neural Net vs. Random" in {
+  it should s"have greater than ${neuralVRandomMinimum*100}% X wins for Neural Net vs. Random" taggedAs(NonCoverageTest) in {
     val gameParameters = new GameParameters()
     gameParameters.agent1Random = false
     gameParameters.agent1Tabular = false
@@ -50,7 +51,7 @@ class TicTacToeSpec extends FlatSpec with Matchers with ParallelTestExecution {
   }
 
   val tabularVTabularMinimum =  0.98
-  it should s"have greater than ${tabularVTabularMinimum*100}% stalemates for Tabular vs. Tabular" in {
+  it should s"have greater than ${tabularVTabularMinimum*100}% stalemates for Tabular vs. Tabular" taggedAs(CoverageTest) in {
     val gameParameters = new GameParameters()
     gameParameters.agent1Random = false
     gameParameters.agent2Random = false
@@ -65,7 +66,7 @@ class TicTacToeSpec extends FlatSpec with Matchers with ParallelTestExecution {
     results._5 should be > (7500)
   }
 
-  //it should "have greater than 90% stalemates for Neural vs. Neural" in {
+  //it should "have greater than 90% stalemates for Neural vs. Neural" taggedAs(NonCoverageTest) in {
     //val gameParameters = new GameParameters()
     //gameParameters.agent1Random = false
     //gameParameters.agent1Tabular = false

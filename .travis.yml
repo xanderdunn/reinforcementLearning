@@ -12,3 +12,7 @@ branches:
 
 script:
   - gradle test
+  - gradle testScoverage
+
+after_success:
+  - pip install --user codecov && codecov

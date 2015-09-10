@@ -1,16 +1,17 @@
 import org.scalatest.{FlatSpec, Matchers, ParallelTestExecution}
+import tags.{CoverageTest, NonCoverageTest}
 import neuralNet.{NeuralNet}
 import neuralNet.NeuralNetUtilities.neuralNetFeatureVectorForStateAction
 
 class NeuralNetSpec extends FlatSpec with Matchers with ParallelTestExecution {
-  "A NeuralNet" should "correctly convert a state and action into a featureVector" in {
+  "A NeuralNet" should "correctly convert a state and action into a featureVector" taggedAs(CoverageTest) in {
     var featureVetor = neuralNetFeatureVectorForStateAction(List("X", "", "", "", "", "", "" , "", ""))
     featureVetor should equal (Array(1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0))
     featureVetor = neuralNetFeatureVectorForStateAction(List("X", "", "", "O", "", "O", "" , "", ""))
     featureVetor should equal (Array(1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0))
   }
 
-  it should "be able to learn sin(x)" in {
+  it should "be able to learn sin(x)" taggedAs(CoverageTest) in {
     val neuralNet = new NeuralNet(1, 20, 0.05, 1.0)
     var i = 0
     while (i < 100000) { // Train
@@ -36,7 +37,7 @@ class NeuralNetSpec extends FlatSpec with Matchers with ParallelTestExecution {
     }
   }
 
-  it should "be able to learn x=y" in {
+  it should "be able to learn x=y" taggedAs(CoverageTest) in {
     val neuralNet = new NeuralNet(1, 10, 0.1, 1.0)
     var i = 0
     while (i < 100000) { // Train

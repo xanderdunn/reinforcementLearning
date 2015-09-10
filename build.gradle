@@ -15,7 +15,25 @@ buildscript {
   }
   dependencies {
     classpath "com.github.maiflai:gradle-scalatest:0.9"
+    classpath 'org.scoverage:gradle-scoverage:1.0.9'
   }
 }
 
 apply plugin: "com.github.maiflai.scalatest"
+apply plugin: 'scoverage'
+
+test {
+    tags {
+        exclude 'org.scalatest.tags.Coverage'
+    }
+}
+
+testScoverage {
+    tags {
+        exclude 'org.scalatest.tags.NonCoverage'
+    }
+}
+
+dependencies {
+    scoverage 'org.scoverage:scalac-scoverage-plugin_2.11:1.1.0', 'org.scoverage:scalac-scoverage-runtime_2.11:1.1.0'
+}
