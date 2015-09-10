@@ -1,5 +1,6 @@
 [![Build Status](https://travis-ci.org/xanderdunn/reinforcementLearning.svg?branch=master)](https://travis-ci.org/xanderdunn/reinforcementLearning)
 [![codecov.io](http://codecov.io/github/xanderdunn/reinforcementLearning/coverage.svg?branch=master)](http://codecov.io/github/xanderdunn/reinforcementLearning?branch=master)
+[![Codacy Badge](https://api.codacy.com/project/badge/58fa52b20ade48f5964e8935518a4e4e)](https://www.codacy.com/app/xanderdunn/reinforcementLearning)
 
 # Deep Reinforcement Learning
 Implement a reinforcement learner on the Tic-tac-toe problem that uses a neural net to approximate the value function.  No outside help was enlisted other than the typical Google searches for Scala syntax, equations, etc.  I made heavy reference of Sutton and Barto's _Reinforcement Learning_.
