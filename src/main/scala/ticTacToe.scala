@@ -13,8 +13,8 @@ import scala.math
 import scala.util.Random.{nextInt, nextDouble}
 import scala.collection.mutable.{ArrayBuffer, Seq, IndexedSeq, MutableList, Map}
 // Custom
-import neuralNet.NeuralNet
-import neuralNet.NeuralNetUtilities._
+import neuralNet.{MultiLayerPerceptron}
+import activationFunctions.{TangentSigmoidActivationFunction, LinearActivationFunction}
 import ticTacToe.EnvironmentUtilities._
 import debug.DebugUtilities.debugPrint
 
@@ -173,7 +173,7 @@ class TicTacToeLearning(generateGraph : Boolean, gameParameters : GameParameters
       stats(episodeCounter) = playEpisode(ticTacToeWorld, epsilon, true, "X")
       episodeCounter += 1
     }
-    return stats
+    stats
   }
 
   def playEpisode(ticTacToeWorld : TicTacToeWorld, epsilon : Double, shouldLearn : Boolean, collectingDataFor : String) : Double = {
@@ -185,7 +185,7 @@ class TicTacToeLearning(generateGraph : Boolean, gameParameters : GameParameters
     while (episodeOutcome == -2.0) { // Test run with epsilon = 0
       episodeOutcome = iterateGameStep(ticTacToeWorld, 0.0, shouldLearn, None, collectingDataFor)
     }
-    return episodeOutcome
+    episodeOutcome
   }
 
   /** Take one step in the game: The player takes an action, the other player responds, and the board hands out reward to both players.  If you're collecting data for a graph, pass in the string "X" or "O" for the player whose data you're interested in.  This method returns 1 if that player won this episode, -1 if it lost, 0 if it was a stalemate, and -2 if the episode hasn't ended. */
@@ -213,7 +213,7 @@ class TicTacToeLearning(generateGraph : Boolean, gameParameters : GameParameters
     if (frame != None) {
       frame.get.repaint()
     }
-    return returnValue
+    returnValue
     // TODO: Show some text on the tic tac toe board when a certain player wins
     // TODO: Fix the timing such that the end state is visible to the user for a moment.
     //Thread.sleep(500)
@@ -274,11 +274,10 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
   }
   val stateValues = Map[List[String], Map[Int, Double]]()  // The state-value function is stored in a map with keys that are environment states of the Tic-tac-toe board and values that are arrays of the value of each possible action in this state.  A possible action is any space that is not currently occupied.
   def tabular = _tabular
-  //val neuralNet = new NeuralNet(10, Parameters.neuralNumberHiddenNeurons, Parameters.neuralNetAlpha, Parameters.neuralInitialBias)
   val neuralNets = {
-    val mutableNeuralNets = Map[Int, NeuralNet]()
+    val mutableNeuralNets = Map[Int, MultiLayerPerceptron]()
     for (i <- 1 to 9) {
-      mutableNeuralNets(i) = new NeuralNet(18, Parameters.neuralNumberHiddenNeurons, Parameters.neuralNetAlpha, Parameters.neuralInitialBias)
+      mutableNeuralNets(i) = new MultiLayerPerceptron(List(18, Parameters.neuralNumberHiddenNeurons, 1), List(new TangentSigmoidActivationFunction(), new LinearActivationFunction()))
     }
     mutableNeuralNets
   }
@@ -304,22 +303,21 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
         stateValues(state) = newStateValues
       }
     }
-    return stateValues(state)
+    stateValues(state)
   }
 
   /** Query the neural network for the maximum value for the given board state.  The return tuple is the (maximumValue, correspondingAction) */
   def maxNeuralNetValueAndActionForState(state : List[String]) : (Double, Int) = {
     val possibleMoves = emptySpaces(state)
     if (possibleMoves.size == 0) { // The value of an end state position is always 0, and there is no position to take next
-      return (0.0, 0)
+      (0.0, 0)
     }
     debugPrint(s"${name} is getting max neural net values for spaces ${possibleMoves.mkString(", ")}")
     var maxValue = Double.MinValue
     var greedyAction = 0
     val stateValues = Map[Int, Double]()
     for (possibleMove <- possibleMoves) {
-      val input = neuralNetFeatureVectorForStateAction(state)
-      val value = neuralNets(possibleMove).feedForward(input.toArray)
+      val value = neuralNets(possibleMove).feedForward(neuralNetFeatureVectorForStateAction(state))(0)
       stateValues(possibleMove) = value
       if (value > maxValue || maxValue == Double.MinValue) {
         greedyAction = possibleMove
@@ -336,7 +334,7 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
     if (maxValueSpaces.size > 1) {
       debugPrint(s"Have max value state ties on states ${maxValueSpaces.mkString(", ")}")
     }
-    return (maxValue, maxValueSpaces(scala.util.Random.nextInt(maxValueSpaces.size))) // Break ties randomly
+    (maxValue, maxValueSpaces(scala.util.Random.nextInt(maxValueSpaces.size))) // Break ties randomly
   }
 
   /** The agent chooses the next action to take. */
@@ -374,7 +372,7 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
 
   /** Use a neural network to choose the greedy action to take */
   def neuralNetGreedyAction(boardState : List[String]) : Int = {
-    return maxNeuralNetValueAndActionForState(boardState)._2
+    maxNeuralNetValueAndActionForState(boardState)._2
   }
 
   /** Decide what to do given the current environment and return that action. */
@@ -387,7 +385,7 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
         maxValueSpaces += key
       }
     }
-    return maxValueSpaces(nextInt(maxValueSpaces.size))
+    maxValueSpaces(nextInt(maxValueSpaces.size))
   }
 
   def sanityCheckReward(reward : Double) {
@@ -411,14 +409,15 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
   }
 
   /** On any value update, the value should approach the expected return of the state action pair, not the immediate reward. The target is the reward plus the value of the next state. */
-  def sanityCheckValueUpdate(reward : Double, previousValue : Double, updatedValue : Double, targetValue : Double) {
+  def sanityCheckValueUpdate(reward : Double, previousValue : Double, updatedValue : Double, targetValue : Double) : Unit = {
     val target = reward + targetValue
     if (Math.abs(previousValue - target) < Math.abs(updatedValue - target)) {  // The difference between the target and the previous value should always be greater than the difference between the target and updated value
       throw new InvalidState(s"Player ${name} received a reward of ${reward} and the state value was updated from ${previousValue} to ${updatedValue}.  However, it was expected that the value would get closer to the reward ${reward} + target value ${targetValue}")
     }
   }
 
-  def tabularReward(reward : Double) {
+  /** Update the value function for a tabular learner. */
+  def tabularReward(reward : Double) : Unit = {
     // Make sure they're initialized
     getStateValues(s)
     getStateValues(sp1)
@@ -444,17 +443,18 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
     sanityCheckValueUpdate(reward, previousStateValue, stateValues(s)(a), targetValue)
   }
 
-  def neuralReward(reward : Double) {
+  /** Update the value function for a neural network function approximation learner. */
+  def neuralReward(reward : Double) : Unit = {
     debugPrint(s"Updating ${name}'s neural net for making the move ${a} from the state ${s}")
     val previousStateFeatureVector = neuralNetFeatureVectorForStateAction(s)
-    val previousStateActionValue = neuralNets(a).feedForward(previousStateFeatureVector)
+    val previousStateActionValue = neuralNets(a).feedForward(previousStateFeatureVector)(0)
     var updateValue = 0.0
     var targetValue = 0.0
     Parameters.updateFunction match {
       case UpdateFunctionTypes.SARSA => {
         val stateFeatureVector = neuralNetFeatureVectorForStateAction(sp1)
         if (!isEndState(sp1)) {
-          targetValue = neuralNets(ap1).feedForward(stateFeatureVector)
+          targetValue = neuralNets(ap1).feedForward(stateFeatureVector)(0)
         }
         updateValue = previousStateActionValue + Parameters.neuralValueLearningAlpha * (reward + Parameters.gamma * targetValue - previousStateActionValue)
         debugPrint(s"previousStateActionValue = ${previousStateActionValue} alpha = ${Parameters.neuralValueLearningAlpha} reward = ${reward} gamma = ${Parameters.gamma} stateActionValue = ${targetValue} updateValue = ${updateValue}")
@@ -466,9 +466,9 @@ class Agent(_name : String, _tabular : Boolean, _random : Boolean) {
         updateValue = previousStateActionValue + Parameters.neuralValueLearningAlpha * (reward + Parameters.gamma * targetValue - previousStateActionValue)
       }
     }
-    neuralNets(a).train(previousStateFeatureVector, updateValue)
+    neuralNets(a).train(previousStateFeatureVector, List(updateValue))
     debugPrint(s"Updated player ${name}'s neural net for ${previousStateFeatureVector.mkString(", ")} with reward ${reward} and targetValue ${updateValue}")
-    val previousStateActionValueUpdated = neuralNets(a).feedForward(previousStateFeatureVector)
+    val previousStateActionValueUpdated = neuralNets(a).feedForward(previousStateFeatureVector)(0)
     sanityCheckValueUpdate(reward, previousStateActionValue, previousStateActionValueUpdated, targetValue)
   }
 
@@ -494,7 +494,7 @@ object EnvironmentUtilities {
   val size = 3
   /** Return all spaces where the given agent currently has its mark. */
   def spacesOccupiedByAgent(agent : Agent, spaceOwners : List[String]) : List[Int] = {
-    return spaceOwners.zipWithIndex.collect {
+    spaceOwners.zipWithIndex.collect {
       case (element, index) if element == agent.name => index + 1
     }
   }
@@ -505,48 +505,48 @@ object EnvironmentUtilities {
     if (column == 0) {
       column = size
     }
-    return column - 1
+    column - 1
   }
 
   /** Take a position in the grid and return the top to bottom number that is the row this position is in. */
   def rowNumber(position : Int) : Int = {
-    return math.ceil(position.toDouble / size.toDouble).toInt - 1
+    math.ceil(position.toDouble / size.toDouble).toInt - 1
   }
 
   // TODO: The board could be represented in a clever way such that looking up the row and column numbers each time is not necessary.
   /** Take a list of all spots owned by a single agent.  This agent is in a winning state if it owns an entire row, an entire column, or an entire diagonal.*/
   def isWinningBoard(spaces : List[Int]) : Boolean = {
     if (spaces.size == 0) {
-      return false
+      false
     }
     val ownedRows = spaces.map(x => rowNumber(x))
     val ownedColumns = spaces.map(x => columnNumber(x))
     val mostCommonRow = ownedRows.groupBy(identity).mapValues(_.size).maxBy(_._2)
     if (mostCommonRow._2 == size) { // Three spots in the same row, so win
-      return true
+      true
     }
     val mostCommonColumn = ownedColumns.groupBy(identity).mapValues(_.size).maxBy(_._2)
     if (mostCommonColumn._2 == size) { // Three spots in the same column, so win
-      return true
+      true
     }
     if ((spaces.contains(1) && spaces.contains(5) && spaces.contains(9)) || (spaces.contains(7) && spaces.contains(5) && spaces.contains(3))) {
-      return true
+      true
     }
     else {
-      return false
+      false
     }
   }
 
   /** Return all spaces that have any player on it. */
   def occupiedSpaces(spaceOwners : List[String]) : List[Int] = {
-    return spaceOwners.zipWithIndex.collect {
+    spaceOwners.zipWithIndex.collect {
       case (element, index) if element != "" => index + 1
     }
   }
 
   /** Return a list of all spaces that are not occupied by any player. */
   def emptySpaces(spaceOwners : List[String]) : List[Int] = {
-    return spaceOwners.zipWithIndex.collect {
+    spaceOwners.zipWithIndex.collect {
       case (element, index) if element == "" => index + 1
     }
   }
@@ -562,42 +562,38 @@ object EnvironmentUtilities {
       }
       i += 1
     }
-    return differences.toList
+    differences.toList
   }
 
   /** The board is full if all spaces are taken by some agent.  This is used with isWinningBoard() to determine a stalemate. */
   def isFullBoard(spaceOwners : List[String]) : Boolean = {
     val noOwnerIndex = spaceOwners.indexWhere( _ == "")
     if (noOwnerIndex == -1) {
-      return true
+      true
     }
     else {
-      return false
+      false
     }
   }
 
   def otherPlayerWon(agent : Agent, board : List[String]) : Boolean = {
     if (agent.name == "X") {
-      return playerWon("O", board)
+      playerWon("O", board)
     }
     else {
-      return playerWon("X", board)
+      playerWon("X", board)
     }
   }
 
   /** Check if player X won. */
   def xWon(board : List[String]) : Boolean = {
-    return playerWon("X", board)
+    playerWon("X", board)
   }
 
   /** Check if player O won. */
-  def oWon(board : List[String]) : Boolean = {
-    return playerWon("O", board)
-  }
+  def oWon(board : List[String]) : Boolean = playerWon("O", board)
 
-  def playerWon(agent : Agent, board : List[String]) : Boolean = {
-    return playerWon(agent.name, board)
-  }
+  def playerWon(agent : Agent, board : List[String]) : Boolean = playerWon(agent.name, board)
 
   /** Check if the given player won. */
   def playerWon(playerMark : String, board : List[String]) : Boolean = {
@@ -605,23 +601,35 @@ object EnvironmentUtilities {
       case (element, index) if element == playerMark => index + 1
     }
     if (isWinningBoard(ownedSpaces.toList)) {
-      return true
+      true
     }
-    return false
+    false
   }
 
   /** Check if the current board state is the end of a game because someone won or it's a tie. */
   def isEndState(board : List[String]) : Boolean = {
     if (xWon(board)) {
-      return true
+      true
     }
     if (oWon(board)) {
-      return true
+      true
     }
     if (isFullBoard(board)) {
-      return true
+      true
     }
-    return false
+    false
+  }
+
+  def neuralNetFeatureVectorForStateAction(state : List[String]) : List[Double] = {
+
+    def iterateState(state : List[String], xList : List[Double], oList : List[Double]) : (List[Double], List[Double]) = state.head match {
+      case "X" => iterateState(state.tail, xList :+ 1.0, oList :+ 0.0)
+      case "O" => iterateState(state.tail, xList :+ 0.0, oList :+ 1.0)
+      case  _  => (xList, oList)
+    }
+
+    val featureVectors = iterateState(state, List(), List())
+    featureVectors._1 ::: featureVectors._2
   }
 }
 
@@ -632,11 +640,11 @@ class TicTacToeBoard() {
   val uniqueBoardStates = scala.collection.mutable.Map[List[String], Int]()
 
   def emptyMutableList() : MutableList[String] = {
-    return MutableList.fill(9){""}
+    MutableList.fill(9){""}
   }
 
   def getList() : List[String] = {
-    return spaceOwners.toList
+    spaceOwners.toList
   }
 
   def setSpaceOwner(space : Int, newOwner : String) {
@@ -690,10 +698,10 @@ class Environment(agent1 : Agent, agent2 : Agent) {
 
   def getOtherAgent(agent : Agent) : Agent = {
     if (agent == agent1) {
-      return agent2
+      agent2
     }
     else {
-      return agent1
+      agent1
     }
   }
 

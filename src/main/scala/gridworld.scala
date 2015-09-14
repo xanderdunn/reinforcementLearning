@@ -77,11 +77,10 @@ class Agent() {
   val stateValues = scala.collection.mutable.Map[Int, scala.collection.mutable.ArrayBuffer[Int]]()  // The state-value function is stored in a map with keys that are state positions on the gridworld and values that are arrays of length 4 that store, in order, the value for each action in this state: UP, DOWN, LEFT, RIGHT
 
   /** Convenience method for initializing values for a given state if not already initialized */
-  def getStateValues(givenState : Int) : scala.collection.mutable.ArrayBuffer[Int] = { 
+  def initStateValues(givenState : Int) : Unit = {
     if (!stateValues.contains(givenState)) { // Initialize the state values to 0
       stateValues(givenState) = scala.collection.mutable.ArrayBuffer(0, 0, 0, 0)
     }
-    return stateValues(givenState)
   }
 
   /** Decide what to do given the current state and return that action. */
@@ -89,8 +88,9 @@ class Agent() {
     val rand = scala.util.Random
     val randomHundred = rand.nextInt(100)
     if (randomHundred <= 89) { // Exploit: Choose the greedy action and break ties randomly
-      val maxValue = getStateValues(state).reduceLeft(_ max _)
-      val maxValueIndices = getStateValues(state).zipWithIndex.collect {
+      initStateValues(state)
+      val maxValue = stateValues(state).reduceLeft(_ max _)
+      val maxValueIndices = stateValues(state).zipWithIndex.collect {
         case (element, index) if element == maxValue => index
       }
       _previousAction = MoveDirection(maxValueIndices(rand.nextInt(maxValueIndices.size)))
@@ -98,14 +98,14 @@ class Agent() {
     else { // Explore: Randomly choose an action
       _previousAction = MoveDirection(rand.nextInt(4))
     }
-    return _previousAction
+    _previousAction
   }
 
   /** The environment hands the agent some reward */
   def reward(value : Int) {
     // Make sure they're initialized
-    getStateValues(_previousState)
-    getStateValues(state)
+    initStateValues(_previousState)
+    initStateValues(state)
     val updateValue = (value + stateValues(state).reduceLeft(_ max _)) - stateValues(_previousState)(_previousAction.id) // Q-Learning
     if (updateValue > 0) {
       greenStates += _previousState
@@ -206,12 +206,12 @@ class GridWorldPanel(gridWorld : GridWorld) extends JPanel {
     if (column == 0) {
       column = gridSize
     }
-    return column - 1
+    column - 1
   }
 
   /** Take a position in the grid and return the top to bottom number that is the row this position is in. */
   def rowNumber(position : Int, gridSize : Int) : Int = {
-    return math.ceil(position.toDouble / gridSize.toDouble).toInt - 1
+    math.ceil(position.toDouble / gridSize.toDouble).toInt - 1
   }
 
   /** Logic for drawing the agent's state on the screen. */

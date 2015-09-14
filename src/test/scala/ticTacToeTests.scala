@@ -1,9 +1,9 @@
 import org.scalatest.{FlatSpec, Matchers, ParallelTestExecution}
-import ticTacToe.{TicTacToeLearning, GameParameters}
-import tags.{CoverageTest, NonCoverageTest}
+import ticTacToe.{TicTacToeLearning, GameParameters, EnvironmentUtilities}
+import tags.{CoverageAcceptanceTest, NonCoverageAcceptanceTest, UnitTest}
 
 class TicTacToeSpec extends FlatSpec with Matchers with ParallelTestExecution {
-  "Tic-tac-toe learning" should "have 43% X wins, 43% O wins, and 14% stalemates for Random vs. Random, regardless of being a tabular or neural net agent." taggedAs(CoverageTest) in {
+  "Tic-tac-toe learning" should "have 43% X wins, 43% O wins, and 14% stalemates for Random vs. Random, regardless of being a tabular or neural net agent." taggedAs(CoverageAcceptanceTest) in {
     val gameParametersTabularTabular = new GameParameters()
     val gameParametersTabularNeural = new GameParameters()
     gameParametersTabularNeural.agent2Tabular = false
@@ -23,7 +23,7 @@ class TicTacToeSpec extends FlatSpec with Matchers with ParallelTestExecution {
   }
 
   val tabularVRandomMinimum = 0.88
-  it should s"have greater than ${tabularVRandomMinimum*100}% X wins for Tabular vs. Random" taggedAs(CoverageTest) in {
+  it should s"have greater than ${tabularVRandomMinimum*100}% X wins for Tabular vs. Random" taggedAs(CoverageAcceptanceTest) in {
     val gameParameters = new GameParameters()
     gameParameters.agent1Random = false
     val ticTacToeLearning = new TicTacToeLearning(false, gameParameters)
@@ -36,7 +36,7 @@ class TicTacToeSpec extends FlatSpec with Matchers with ParallelTestExecution {
   }
 
   val neuralVRandomMinimum = 0.79
-  it should s"have greater than ${neuralVRandomMinimum*100}% X wins for Neural Net vs. Random" taggedAs(NonCoverageTest) in {
+  it should s"have greater than ${neuralVRandomMinimum*100}% X wins for Neural Net vs. Random" taggedAs(NonCoverageAcceptanceTest) in {
     val gameParameters = new GameParameters()
     gameParameters.agent1Random = false
     gameParameters.agent1Tabular = false
@@ -51,7 +51,7 @@ class TicTacToeSpec extends FlatSpec with Matchers with ParallelTestExecution {
   }
 
   val tabularVTabularMinimum =  0.98
-  it should s"have greater than ${tabularVTabularMinimum*100}% stalemates for Tabular vs. Tabular" taggedAs(CoverageTest) in {
+  it should s"have greater than ${tabularVTabularMinimum*100}% stalemates for Tabular vs. Tabular" taggedAs(CoverageAcceptanceTest) in {
     val gameParameters = new GameParameters()
     gameParameters.agent1Random = false
     gameParameters.agent2Random = false
@@ -66,19 +66,26 @@ class TicTacToeSpec extends FlatSpec with Matchers with ParallelTestExecution {
     results._5 should be > (7500)
   }
 
-  //it should "have greater than 90% stalemates for Neural vs. Neural" taggedAs(NonCoverageTest) in {
-    //val gameParameters = new GameParameters()
-    //gameParameters.agent1Random = false
-    //gameParameters.agent1Tabular = false
-    //gameParameters.agent2Random = false
-    //gameParameters.agent2Tabular = false
-    //gameParameters.numberTrainEpisodes = 100000
-    //val ticTacToeLearning = new TicTacToeLearning(false, gameParameters)
-    //val results = ticTacToeLearning.learn()
-    //val stalematesRatio = results._3 / results._4
-    //stalematesRatio should be > (0.90)
-    //info(s"${stalematesRatio * 100.0}% of games were stalemates")
-    //results._4 should equal (20000.0)
-    //results._5 should be > (7500)
-  //}
+  it should "have greater than 90% stalemates for Neural vs. Neural" taggedAs(NonCoverageAcceptanceTest) in {
+    val gameParameters = new GameParameters()
+    gameParameters.agent1Random = false
+    gameParameters.agent1Tabular = false
+    gameParameters.agent2Random = false
+    gameParameters.agent2Tabular = false
+    gameParameters.numberTrainEpisodes = 100000
+    val ticTacToeLearning = new TicTacToeLearning(false, gameParameters)
+    val results = ticTacToeLearning.learn()
+    val stalematesRatio = results._3 / results._4
+    stalematesRatio should be > (0.90)
+    info(s"${stalematesRatio * 100.0}% of games were stalemates")
+    results._4 should equal (20000.0)
+    results._5 should be > (7500)
+  }
+
+  it should "correctly convert a state and action into a featureVector" taggedAs(UnitTest) in {
+    var featureVetor = EnvironmentUtilities.neuralNetFeatureVectorForStateAction(List("X", "", "", "", "", "", "" , "", ""))
+    featureVetor should equal (Array(1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0))
+    featureVetor = EnvironmentUtilities.neuralNetFeatureVectorForStateAction(List("X", "", "", "O", "", "O", "" , "", ""))
+    featureVetor should equal (Array(1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0))
+  }
 }

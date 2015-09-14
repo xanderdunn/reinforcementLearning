@@ -1,12 +1,4 @@
-repositories {
-    mavenCentral()
-}
-apply plugin: 'scala'
-dependencies {
-    compile 'org.scala-lang:scala-library:2.11.7'
-    testCompile 'org.scalatest:scalatest_2.11:2+'
-    testRuntime 'org.pegdown:pegdown:1.1.0'
-}
+// scoverage = code coverage
 buildscript {
   repositories {
     maven {
@@ -14,26 +6,37 @@ buildscript {
     }
   }
   dependencies {
-    classpath "com.github.maiflai:gradle-scalatest:0.9"
     classpath 'org.scoverage:gradle-scoverage:1.0.9'
   }
 }
 
-apply plugin: "com.github.maiflai.scalatest"
+// scalatest = unit testing framework
+plugins {
+  id "com.github.maiflai.scalatest" version "0.9"
+}
 apply plugin: 'scoverage'
+repositories {
+    mavenCentral()
+}
+apply plugin: 'scala'  // basic scala support
+dependencies {
+    compile 'org.scala-lang:scala-library:2.11.7'
+    testCompile 'org.scalatest:scalatest_2.11:2+'
+    testRuntime 'org.pegdown:pegdown:1.1.0'
+    scoverage 'org.scoverage:scalac-scoverage-plugin_2.11:1.1.0', 'org.scoverage:scalac-scoverage-runtime_2.11:1.1.0'
+}
+
+apply plugin: "com.github.maiflai.scalatest"
 
 test {
     tags {
-        exclude 'org.scalatest.tags.Coverage'
+        exclude 'xander.tags.CoverageAcceptanceTest'
+        exclude 'xander.tags.UnitTest'
     }
 }
 
 testScoverage {
     tags {
-        exclude 'org.scalatest.tags.NonCoverage'
+        exclude 'xander.tags.NonCoverageAcceptanceTest'
     }
-}
-
-dependencies {
-    scoverage 'org.scoverage:scalac-scoverage-plugin_2.11:1.1.0', 'org.scoverage:scalac-scoverage-runtime_2.11:1.1.0'
 }
