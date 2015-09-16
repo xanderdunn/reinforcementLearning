@@ -622,10 +622,15 @@ object EnvironmentUtilities {
 
   def neuralNetFeatureVectorForStateAction(state : List[String]) : List[Double] = {
 
-    def iterateState(state : List[String], xList : List[Double], oList : List[Double]) : (List[Double], List[Double]) = state.head match {
-      case "X" => iterateState(state.tail, xList :+ 1.0, oList :+ 0.0)
-      case "O" => iterateState(state.tail, xList :+ 0.0, oList :+ 1.0)
-      case  _  => (xList, oList)
+    def iterateState(state : List[String], xList : List[Double], oList : List[Double]) : (List[Double], List[Double]) = state match {
+      case Nil => (xList, oList) // If it's the empty list, return the result
+      case _ => {
+        state.head match {
+          case "X" => iterateState(state.tail, xList :+ 1.0, oList :+ 0.0)
+          case "O" => iterateState(state.tail, xList :+ 0.0, oList :+ 1.0)
+          case ""  => iterateState(state.tail, xList :+ 0.0, oList :+ 0.0)
+        }
+      }
     }
 
     val featureVectors = iterateState(state, List(), List())
