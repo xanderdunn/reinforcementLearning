@@ -1,9 +1,9 @@
-import org.scalatest.{FlatSpec, Matchers, ParallelTestExecution}
+import org.scalatest.{FlatSpec, Matchers}
 import tags.{CoverageAcceptanceTest, NonCoverageAcceptanceTest, UnitTest}
 import neuralNet.MultiLayerPerceptron
 import activationFunctions.{TangentSigmoidActivationFunction, LinearActivationFunction}
 
-class NeuralNetSpec extends FlatSpec with Matchers with ParallelTestExecution {
+class NeuralNetSpec extends FlatSpec with Matchers {
   "A NeuralNet" should "be able to learn sin(x)" taggedAs(CoverageAcceptanceTest) in {
     val neuralNet = new MultiLayerPerceptron(List(1, 20, 1), List(new TangentSigmoidActivationFunction(), new LinearActivationFunction()))
     var i = 0

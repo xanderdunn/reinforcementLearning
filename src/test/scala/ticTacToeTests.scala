@@ -1,8 +1,8 @@
-import org.scalatest.{FlatSpec, Matchers, ParallelTestExecution}
+import org.scalatest.{FlatSpec, Matchers}
 import ticTacToe.{TicTacToeLearning, GameParameters, EnvironmentUtilities}
 import tags.{CoverageAcceptanceTest, NonCoverageAcceptanceTest, UnitTest}
 
-class TicTacToeSpec extends FlatSpec with Matchers with ParallelTestExecution {
+class TicTacToeSpec extends FlatSpec with Matchers {
   "Tic-tac-toe learning" should "have 43% X wins, 43% O wins, and 14% stalemates for Random vs. Random, regardless of being a tabular or neural net agent." taggedAs(CoverageAcceptanceTest) in {
     val gameParametersTabularTabular = new GameParameters()
     val gameParametersTabularNeural = new GameParameters()
