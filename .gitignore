@@ -19,5 +19,8 @@ project/plugins/project/
 # Gradle
 .gradle
 
+# ENSIME
+.ensime*
+
 *.pdf
 *.png

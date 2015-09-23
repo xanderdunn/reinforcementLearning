@@ -1,57 +1,48 @@
-import org.scalatest.{FlatSpec, Matchers, ParallelTestExecution}
-import tags.{CoverageTest, NonCoverageTest}
-import neuralNet.{NeuralNet}
-import neuralNet.NeuralNetUtilities.neuralNetFeatureVectorForStateAction
+import org.scalatest.{FlatSpec, Matchers}
+import tags.{CoverageAcceptanceTest, NonCoverageAcceptanceTest, UnitTest}
+import neuralNet.MultiLayerPerceptron
+import activationFunctions.{TangentSigmoidActivationFunction, LinearActivationFunction}
 
-class NeuralNetSpec extends FlatSpec with Matchers with ParallelTestExecution {
-  "A NeuralNet" should "correctly convert a state and action into a featureVector" taggedAs(CoverageTest) in {
-    var featureVetor = neuralNetFeatureVectorForStateAction(List("X", "", "", "", "", "", "" , "", ""))
-    featureVetor should equal (Array(1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0))
-    featureVetor = neuralNetFeatureVectorForStateAction(List("X", "", "", "O", "", "O", "" , "", ""))
-    featureVetor should equal (Array(1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0))
-  }
-
-  it should "be able to learn sin(x)" taggedAs(CoverageTest) in {
-    val neuralNet = new NeuralNet(1, 20, 0.05, 1.0)
+class NeuralNetSpec extends FlatSpec with Matchers {
+  "A NeuralNet" should "be able to learn sin(x)" taggedAs(CoverageAcceptanceTest) ignore {
+    val neuralNet = new MultiLayerPerceptron(Vector(1, 20, 1), Vector(new TangentSigmoidActivationFunction(), new LinearActivationFunction()))
     var i = 0
     while (i < 100000) { // Train
       val x = scala.util.Random.nextDouble()
       val y = scala.math.sin(x)
-      neuralNet.train(Array(x), y)
+      neuralNet.train(Vector(x), Vector(y))
       i += 1
     }
     i = 0
     while (i < 1000) {
       val x = scala.util.Random.nextDouble()
       val y = scala.math.sin(x)
-      val result = neuralNet.feedForward(Array(x))
+      val result = neuralNet.feedForward(Vector(x))(0)
       result should equal (y +- 0.1)
       i += 1
     }
     while (i < 1000) { // Negative test to check that the test itself isn't broken
       val x = scala.util.Random.nextDouble()
       val y = scala.math.sin(x)
-      val result = neuralNet.feedForward(Array(x))
+      val result = neuralNet.feedForward(Vector(x))(0)
       result should not equal (y +- 0.01)
       i += 1
     }
   }
 
-  it should "be able to learn x=y" taggedAs(CoverageTest) in {
-    val neuralNet = new NeuralNet(1, 10, 0.1, 1.0)
+  it should "be able to learn x=y" taggedAs(CoverageAcceptanceTest) ignore {
+    val neuralNet = new MultiLayerPerceptron(Vector(1, 10, 1), Vector(new TangentSigmoidActivationFunction(), new LinearActivationFunction()))
     var i = 0
     while (i < 100000) { // Train
       val x = scala.util.Random.nextDouble()
-      //println(s"input = ${x}")
-      val result = neuralNet.feedForward(Array(x))
-      //println(s"result = ${result}")
-      neuralNet.train(Array(x), x)
+      val result = neuralNet.feedForward(Vector(x))
+      neuralNet.train(Vector(x), Vector(x))
       i += 1
     }
     i = 0
     while (i < 1000) {
       val x = scala.util.Random.nextDouble()
-      val result = neuralNet.feedForward(Array(x))
+      val result = neuralNet.feedForward(Vector(x))(0)
       result should equal (x +- 0.1)
       i += 1
     }
