@@ -7,21 +7,26 @@ buildscript {
   }
   dependencies {
     classpath 'org.scoverage:gradle-scoverage:1.0.9'
+    classpath group: 'net.coacoas.gradle', name: 'gradle-ensime', version: '0.1.10'
   }
 }
-
 // scalatest = unit testing framework
 plugins {
   id "com.github.maiflai.scalatest" version "0.9"
 }
 apply plugin: 'scoverage'
+ext {
+    scalaLibraryVersion = "2.11.7"
+}
 repositories {
     mavenCentral()
 }
 apply plugin: 'scala'  // basic scala support
+apply plugin: 'ensime'
 dependencies {
     compile 'org.scala-lang:scala-library:2.11.7'
     testCompile 'org.scalatest:scalatest_2.11:2+'
+    testCompile 'org.scalamock:scalamock-scalatest-support_2.10:3.2.2'
     testRuntime 'org.pegdown:pegdown:1.1.0'
     scoverage 'org.scoverage:scalac-scoverage-plugin_2.11:1.1.0', 'org.scoverage:scalac-scoverage-runtime_2.11:1.1.0'
 }
