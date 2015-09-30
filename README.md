@@ -57,3 +57,6 @@ Building, dependencies, and running tests are handled by gradle.  On Mac you can
 - [scapegoat](https://github.com/jenner-io/gradle-scapegoat) or [sbt integration](https://github.com/sksamuel/sbt-scapegoat)
 - [findbugs](https://gist.github.com/mychaelstyle/9826322)
 - codecov.io for unit test code coverage statistics = try again when the build is fixed
+- [code-maat](https://github.com/adamtornhill/code-maat)
+- [abide](https://github.com/scala/scala-abide)
+- [Scrutinizer](https://scrutinizer-ci.com) when their Scala support is out
