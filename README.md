@@ -45,9 +45,14 @@ Building, dependencies, and running tests are handled by gradle.  On Mac you can
 - I'd like to train the tabular vs. tabular situation, output the tabular value function table, and then use that as training data for my neural network.  Then I can test to see how accurately the neural net is capable of representing the value function in question.  This will separate the problems of the neural net's ability to approximate the function with the neural net + reinforcement learner's ability to traverse states sufficiently to train itself. 
 - It would probably be a good idea to hook up my reinforcement learner to a more established neural network library so that I can rapidly test various configurations (more than 1 hidden layer, various activation functions, etc.).  This will sanity check my neural net implementation as well as allow me to quickly discover what might work better.
 
-## Code Cleanliness
+## Code Quality
 - Travis CI is used for continuous integration
 - `gradle test` runs all tests written with scalatest
 - `sbt compile` runs the WartRemover Scala static code analyzer
-- codecov.io is used for unit test code coverage statistics
 - scalastyle is used in the IDE to conform to standard coding style
+### To Add
+- [HairyFotr's linter](https://github.com/HairyFotr/linter)
+- [cpd](https://github.com/aaschmid/gradle-cpd-plugin) = copy paste detection
+- [scapegoat](https://github.com/jenner-io/gradle-scapegoat) or [sbt integration](https://github.com/sksamuel/sbt-scapegoat)
+- [findbugs](https://gist.github.com/mychaelstyle/9826322)
+- codecov.io for unit test code coverage statistics = try again when the build is fixed
