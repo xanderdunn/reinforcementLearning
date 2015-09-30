@@ -50,6 +50,7 @@ Building, dependencies, and running tests are handled by gradle.  On Mac you can
 - `gradle test` runs all tests written with scalatest
 - `sbt compile` runs the WartRemover Scala static code analyzer
 - scalastyle is used in the IDE to conform to standard coding style
+
 ### To Add
 - [HairyFotr's linter](https://github.com/HairyFotr/linter)
 - [cpd](https://github.com/aaschmid/gradle-cpd-plugin) = copy paste detection
